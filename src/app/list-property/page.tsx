@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Button } from "@/components/ui/button"
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Textarea } from "@/components/ui/textarea"
@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { UploadCloud, X } from "lucide-react"
 import { useState } from "react"
 import { useToast } from "@/hooks/use-toast"
+import Image from "next/image"
 
 const amenitiesList = [
   { id: "parking", label: "Car Parking" },
@@ -24,6 +25,7 @@ const amenitiesList = [
 ]
 
 const formSchema = z.object({
+  listerType: z.enum(["Owner", "Broker", "Builder"], { required_error: "Please specify who you are." }),
   propertyType: z.enum(["Apartment", "House", "Plot", "Shop"], { required_error: "You need to select a property type."}),
   transaction: z.enum(["Sell", "Rent"], { required_error: "You need to select a transaction type."}),
   location: z.string().min(5, "Location is required"),
@@ -47,6 +49,7 @@ export default function ListPropertyPage() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      listerType: "Owner",
       bedrooms: 1,
       bathrooms: 1,
       amenities: [],
@@ -99,7 +102,24 @@ export default function ListPropertyPage() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              
+              <FormField control={form.control} name="listerType" render={({ field }) => (
+                  <FormItem className="space-y-3"><FormLabel className="text-lg font-semibold">You are a...</FormLabel>
+                    <FormControl><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col sm:flex-row gap-4">
+                        <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl><RadioGroupItem value="Owner" /></FormControl>
+                            <FormLabel className="font-normal">Owner</FormLabel>
+                        </FormItem>
+                         <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl><RadioGroupItem value="Broker" /></FormControl>
+                            <FormLabel className="font-normal">Broker / Agent</FormLabel>
+                        </FormItem>
+                         <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl><RadioGroupItem value="Builder" /></FormControl>
+                            <FormLabel className="font-normal">Builder</FormLabel>
+                        </FormItem>
+                    </RadioGroup></FormControl><FormMessage /></FormItem>
+              )}/>
+
               <FormField control={form.control} name="propertyType" render={({ field }) => (
                   <FormItem className="space-y-3"><FormLabel className="text-lg font-semibold">Property Type</FormLabel>
                     <FormControl><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col sm:flex-row gap-4">
