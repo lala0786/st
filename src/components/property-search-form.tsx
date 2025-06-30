@@ -11,12 +11,12 @@ export function PropertySearchForm() {
   return (
     <div className="container mx-auto px-4 md:px-6">
       <Card className="p-2 sm:p-4 shadow-lg -mt-24 z-10 relative bg-card">
-        <Tabs defaultValue="buy">
+        <Tabs defaultValue="sale">
           <TabsList className="grid w-full grid-cols-2 md:w-auto md:inline-flex mb-4">
-            <TabsTrigger value="buy">Buy</TabsTrigger>
-            <TabsTrigger value="rent">Rent</TabsTrigger>
+            <TabsTrigger value="sale">For Sale</TabsTrigger>
+            <TabsTrigger value="rent">For Rent</TabsTrigger>
           </TabsList>
-          <TabsContent value="buy">
+          <TabsContent value="sale">
             <SearchFormFields />
           </TabsContent>
           <TabsContent value="rent">

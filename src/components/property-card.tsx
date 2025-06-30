@@ -41,7 +41,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
             className="absolute top-3 left-3"
             variant={property.transaction === 'Rent' ? 'accent' : 'secondary'}
           >
-            For {property.transaction}
+            {property.transaction === 'Sell' ? 'For Sale' : 'For Rent'}
           </Badge>
           {property.featured && (
              <Badge className="absolute top-3 right-3" variant="destructive">Featured</Badge>

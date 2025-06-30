@@ -18,11 +18,11 @@ export function Header() {
           <span>Pithampur Property Hub</span>
         </Link>
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
-          <Link href="/#buy" className="hover:text-primary transition-colors">
-            Buy
+          <Link href="/#sale" className="hover:text-primary transition-colors">
+            For Sale
           </Link>
           <Link href="/#rent" className="hover:text-primary transition-colors">
-            Rent
+            For Rent
           </Link>
           <Link href="/list-property" className="hover:text-primary transition-colors">
             Sell
