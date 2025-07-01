@@ -41,14 +41,14 @@ export default function ContactPage() {
             </div>
              <div className="space-y-4">
               <h3 className="text-xl font-semibold">Direct Contact</h3>
-               <div className="flex items-center gap-4">
+               <div className="flex items-center gap-4 pl-7">
                 <Phone className="h-5 w-5 text-primary" />
                 <div>
                   <p className="font-medium">Alfej Shaikh</p>
                   <a href="tel:8359069987" className="text-muted-foreground hover:text-primary">8359069987</a>
                 </div>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 pl-7">
                 <Mail className="h-5 w-5 text-primary" />
                  <div>
                   <p className="font-medium">Email Us</p>
