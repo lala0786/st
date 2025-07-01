@@ -18,8 +18,8 @@ export const properties: Property[] = [
       'https://placehold.co/800x500.png',
     ],
     amenities: ['Parking', 'Power Backup', 'Lift', 'Security'],
-    sellerName: 'Ramesh Kumar',
-    sellerPhone: '9876543210',
+    sellerName: 'Alfej Shaikh',
+    sellerPhone: '8359069987',
     featured: true,
   },
   {
