@@ -9,21 +9,22 @@ export default function Home() {
 
   return (
     <div>
-      <section className="relative h-[50vh] bg-primary/20 flex items-center justify-center">
+      <section className="relative h-[60vh] bg-background flex items-center justify-center">
+        <div className="absolute inset-0 bg-black/50 z-10" />
         <Image
-          src="https://placehold.co/1920x600.png"
+          src="https://images.unsplash.com/photo-1582407947304-fd86f028f716?q=80&w=1920&auto=format&fit=crop"
           alt="Hero background"
           fill
-          className="absolute inset-0 z-0 object-cover opacity-30"
-          data-ai-hint="modern architecture cityscape"
+          className="absolute inset-0 z-0 object-cover"
+          data-ai-hint="luxury modern architecture"
           priority
         />
-        <div className="relative z-10 text-center text-card-foreground p-4">
-          <h1 className="text-4xl md:text-5xl font-bold font-headline mb-4 text-foreground">
-            Find Your Dream Property
+        <div className="relative z-20 text-center text-white p-4">
+          <h1 className="text-4xl md:text-6xl font-bold font-headline mb-4">
+            Discover Your Next Chapter
           </h1>
-          <p className="text-lg md:text-xl text-foreground/80 max-w-2xl mx-auto">
-            The best place to find residential and commercial properties in Pithampur.
+          <p className="text-lg md:text-xl text-white/80 max-w-3xl mx-auto">
+            The premier destination for exceptional properties in Pithampur. Your future home awaits.
           </p>
         </div>
       </section>

@@ -11,7 +11,7 @@ export function Header() {
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
 
   return (
-    <header className="bg-card shadow-sm sticky top-0 z-40">
+    <header className="bg-card/95 backdrop-blur-sm shadow-sm sticky top-0 z-40">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
         <Link href="/" className="flex items-center gap-2 font-bold text-lg">
           <Home className="h-6 w-6 text-primary" />
@@ -33,7 +33,7 @@ export function Header() {
           </Link>
         </nav>
         <div className="flex items-center gap-4">
-          <Button asChild variant="accent" className="hidden sm:inline-flex">
+          <Button asChild variant="secondary" className="hidden sm:inline-flex">
             <Link href="/list-property">
               <PlusCircle className="mr-2 h-4 w-4" />
               List Property

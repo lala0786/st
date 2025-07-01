@@ -26,7 +26,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
   }
 
   return (
-    <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
+    <Card className="overflow-hidden shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
       <Link href={`/listing/${property.id}`} className="block">
         <div className="relative">
           <Image
@@ -39,7 +39,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
           />
           <Badge
             className="absolute top-3 left-3"
-            variant={property.transaction === 'Rent' ? 'accent' : 'secondary'}
+            variant={property.transaction === 'Rent' ? 'default' : 'secondary'}
           >
             {property.transaction === 'Sell' ? 'For Sale' : 'For Rent'}
           </Badge>
@@ -51,7 +51,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
           <p className="text-sm text-muted-foreground flex items-center gap-1 mb-1">
              <MapPin className="w-4 h-4" /> {property.location}
           </p>
-          <h3 className="text-lg font-semibold truncate mb-2">{property.title}</h3>
+          <h3 className="text-lg font-semibold truncate mb-2 group-hover:text-primary transition-colors">{property.title}</h3>
           <p className="text-2xl font-bold text-primary mb-3">
             {formatPrice(property.price)} {property.transaction === 'Rent' && '/ month'}
           </p>

@@ -10,7 +10,7 @@ import { MapPin, Search } from "lucide-react";
 export function PropertySearchForm() {
   return (
     <div className="container mx-auto px-4 md:px-6">
-      <Card className="p-2 sm:p-4 shadow-lg -mt-24 z-10 relative bg-card">
+      <Card className="p-2 sm:p-4 shadow-2xl -mt-24 z-20 relative bg-card/80 backdrop-blur-md">
         <Tabs defaultValue="sale">
           <TabsList className="grid w-full grid-cols-2 md:w-auto md:inline-flex mb-4">
             <TabsTrigger value="sale">For Sale</TabsTrigger>
