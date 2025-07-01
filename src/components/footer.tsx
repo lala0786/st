@@ -12,7 +12,10 @@ export function Footer() {
         <p className="text-sm text-muted-foreground">
           © {new Date().getFullYear()} All rights reserved.
         </p>
-        <nav className="flex gap-4">
+        <nav className="flex gap-4 sm:gap-6">
+          <Link href="/contact" className="text-sm hover:text-primary transition-colors">
+            Contact
+          </Link>
           <Link href="#" className="text-sm hover:text-primary transition-colors">
             Privacy Policy
           </Link>

@@ -27,6 +27,9 @@ export function Header() {
           <Link href="/list-property" className="hover:text-primary transition-colors">
             Sell
           </Link>
+          <Link href="/contact" className="hover:text-primary transition-colors">
+            Contact
+          </Link>
         </nav>
         <div className="flex items-center gap-4">
           <Button asChild variant="accent" className="hidden sm:inline-flex">
