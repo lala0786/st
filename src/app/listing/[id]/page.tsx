@@ -5,8 +5,12 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { BedDouble, Bath, AreaChart, MapPin, Phone, MessageCircle, CheckCircle, User } from 'lucide-react';
+import { 
+    BedDouble, Bath, AreaChart, MapPin, Phone, MessageCircle, CheckCircle, User,
+    Car, Zap, ArrowUpDown, Shield, Droplets, Lock, Road, Flower2, Waves, Users, Eye, Dumbbell, Gamepad2
+} from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import React from 'react';
 
 
 const formatPrice = (price: number) => {
@@ -30,6 +34,22 @@ export default function ListingDetailPage({ params }: { params: { id: string } }
     Plot: 'empty plot',
     Shop: 'shop interior',
   }
+
+  const amenityIcons: { [key: string]: React.ReactNode } = {
+    'Parking': <Car className="h-5 w-5 text-primary" />,
+    'Power Backup': <Zap className="h-5 w-5 text-primary" />,
+    'Lift': <ArrowUpDown className="h-5 w-5 text-primary" />,
+    'Security': <Shield className="h-5 w-5 text-primary" />,
+    'Water Supply': <Droplets className="h-5 w-5 text-primary" />,
+    'Gated Community': <Lock className="h-5 w-5 text-primary" />,
+    'Road': <Road className="h-5 w-5 text-primary" />,
+    'Garden': <Flower2 className="h-5 w-5 text-primary" />,
+    'Servant Quarters': <Users className="h-5 w-5 text-primary" />,
+    'Main Road Facing': <Eye className="h-5 w-5 text-primary" />,
+    'Private Pool': <Waves className="h-5 w-5 text-primary" />,
+    'Gym': <Dumbbell className="h-5 w-5 text-primary" />,
+    'Clubhouse': <Gamepad2 className="h-5 w-5 text-primary" />,
+  };
 
   return (
     <div className="bg-background">
@@ -98,10 +118,10 @@ export default function ListingDetailPage({ params }: { params: { id: string } }
             <Card>
               <CardHeader><CardTitle>Amenities</CardTitle></CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-4 gap-x-2">
                   {property.amenities.map((amenity) => (
-                    <div key={amenity} className="flex items-center gap-2">
-                      <CheckCircle className="h-5 w-5 text-accent" />
+                    <div key={amenity} className="flex items-center gap-3">
+                      {amenityIcons[amenity] || <CheckCircle className="h-5 w-5 text-primary" />}
                       <span className="text-muted-foreground">{amenity}</span>
                     </div>
                   ))}
