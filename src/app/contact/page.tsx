@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { MapPin, Phone, Mail } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Separator } from "@/components/ui/separator";
 
 const faqs = [
   {
@@ -39,6 +40,7 @@ export default function ContactPage() {
                   <p>Pithampur, Madhya Pradesh 454775</p>
               </div>
             </div>
+            <Separator />
              <div className="space-y-4">
               <h3 className="text-xl font-semibold">Direct Contact</h3>
                <div className="flex items-center gap-4 pl-7">
