@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Home, LogIn, LogOut, PlusCircle, User, Sparkles } from "lucide-react";
+import { Home, LogIn, LogOut, PlusCircle, User } from "lucide-react";
 import React from "react";
 
 export function Header() {
@@ -23,10 +23,6 @@ export function Header() {
           </Link>
           <Link href="/#rent" className="hover:text-primary transition-colors">
             For Rent
-          </Link>
-          <Link href="/property-qa" className="hover:text-primary transition-colors flex items-center gap-1">
-            <Sparkles className="w-4 h-4" />
-            AI Assistant
           </Link>
           <Link href="/list-property" className="hover:text-primary transition-colors">
             Sell
