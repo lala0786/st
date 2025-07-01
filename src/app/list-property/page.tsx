@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useForm } from "react-hook-form"
@@ -94,113 +95,119 @@ export default function ListPropertyPage() {
 
   return (
     <div className="container mx-auto px-4 md:px-6 py-12">
-      <Card className="max-w-4xl mx-auto">
-        <CardHeader>
-          <CardTitle className="text-3xl font-headline">List Your Property</CardTitle>
-          <CardDescription>Fill out the form below to get your property listed on our platform.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              <FormField control={form.control} name="listerType" render={({ field }) => (
-                  <FormItem className="space-y-3"><FormLabel className="text-lg font-semibold">You are a...</FormLabel>
-                    <FormControl><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col sm:flex-row gap-4">
-                        <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl><RadioGroupItem value="Owner" /></FormControl>
-                            <FormLabel className="font-normal">Owner</FormLabel>
-                        </FormItem>
-                         <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl><RadioGroupItem value="Broker" /></FormControl>
-                            <FormLabel className="font-normal">Broker / Agent</FormLabel>
-                        </FormItem>
-                         <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl><RadioGroupItem value="Builder" /></FormControl>
-                            <FormLabel className="font-normal">Builder</FormLabel>
-                        </FormItem>
-                    </RadioGroup></FormControl><FormMessage /></FormItem>
-              )}/>
+      <div className="max-w-4xl mx-auto space-y-8">
+        <div className="text-center">
+            <h1 className="text-4xl font-headline font-bold">List Your Property</h1>
+            <p className="text-muted-foreground mt-2">Fill out the form below to get your property listed on our platform.</p>
+        </div>
 
-              <FormField control={form.control} name="propertyType" render={({ field }) => (
-                  <FormItem className="space-y-3"><FormLabel className="text-lg font-semibold">Property Type</FormLabel>
-                    <FormControl><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col sm:flex-row gap-4">
-                        {["Apartment", "House", "Plot", "Shop"].map(type => (
-                            <FormItem key={type} className="flex items-center space-x-3 space-y-0">
-                                <FormControl><RadioGroupItem value={type} /></FormControl>
-                                <FormLabel className="font-normal">{type}</FormLabel>
-                            </FormItem>
-                        ))}</RadioGroup></FormControl><FormMessage /></FormItem>
-              )}/>
-              <FormField control={form.control} name="transaction" render={({ field }) => (
-                  <FormItem className="space-y-3"><FormLabel className="text-lg font-semibold">Transaction Type</FormLabel>
-                    <FormControl><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4">
-                        <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="Sell" /></FormControl><FormLabel className="font-normal">Sell</FormLabel></FormItem>
-                        <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="Rent" /></FormControl><FormLabel className="font-normal">Rent</FormLabel></FormItem>
-                    </RadioGroup></FormControl><FormMessage /></FormItem>
-              )}/>
-              
-              <div className="grid md:grid-cols-2 gap-8">
-                <FormField control={form.control} name="location" render={({ field }) => (<FormItem><FormLabel>Location / Address</FormLabel><FormControl><Input placeholder="e.g. Sector 1, Pithampur" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                <FormField control={form.control} name="price" render={({ field }) => (<FormItem><FormLabel>Price (in INR)</FormLabel><FormControl><Input type="number" placeholder="e.g. 4500000" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-              </div>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <Card>
+                <CardHeader><CardTitle>About You & Your Property</CardTitle></CardHeader>
+                <CardContent className="space-y-8">
+                    <FormField control={form.control} name="listerType" render={({ field }) => (
+                      <FormItem className="space-y-3"><FormLabel className="font-semibold">You are a...</FormLabel>
+                        <FormControl><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col sm:flex-row gap-4">
+                            <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="Owner" /></FormControl><FormLabel className="font-normal">Owner</FormLabel></FormItem>
+                            <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="Broker" /></FormControl><FormLabel className="font-normal">Broker / Agent</FormLabel></FormItem>
+                            <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="Builder" /></FormControl><FormLabel className="font-normal">Builder</FormLabel></FormItem>
+                        </RadioGroup></FormControl><FormMessage /></FormItem>
+                    )}/>
+                    <FormField control={form.control} name="propertyType" render={({ field }) => (
+                      <FormItem className="space-y-3"><FormLabel className="font-semibold">Property Type</FormLabel>
+                        <FormControl><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col sm:flex-row gap-4">
+                            {["Apartment", "House", "Plot", "Shop"].map(type => (
+                                <FormItem key={type} className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value={type} /></FormControl><FormLabel className="font-normal">{type}</FormLabel></FormItem>
+                            ))}</RadioGroup></FormControl><FormMessage /></FormItem>
+                    )}/>
+                    <FormField control={form.control} name="transaction" render={({ field }) => (
+                      <FormItem className="space-y-3"><FormLabel className="font-semibold">Transaction Type</FormLabel>
+                        <FormControl><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4">
+                            <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="Sell" /></FormControl><FormLabel className="font-normal">Sell</FormLabel></FormItem>
+                            <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="Rent" /></FormControl><FormLabel className="font-normal">Rent</FormLabel></FormItem>
+                        </RadioGroup></FormControl><FormMessage /></FormItem>
+                    )}/>
+                </CardContent>
+            </Card>
+            
+            <Card>
+                <CardHeader><CardTitle>Location & Price</CardTitle></CardHeader>
+                <CardContent className="grid md:grid-cols-2 gap-8">
+                    <FormField control={form.control} name="location" render={({ field }) => (<FormItem><FormLabel>Location / Address</FormLabel><FormControl><Input placeholder="e.g. Sector 1, Pithampur" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                    <FormField control={form.control} name="price" render={({ field }) => (<FormItem><FormLabel>Price (in INR)</FormLabel><FormControl><Input type="number" placeholder="e.g. 4500000" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                </CardContent>
+            </Card>
 
-              <div className="grid md:grid-cols-3 gap-8">
-                 <FormField control={form.control} name="area" render={({ field }) => (<FormItem><FormLabel>Area (in sqft)</FormLabel><FormControl><Input type="number" placeholder="e.g. 1500" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                 <FormField control={form.control} name="bedrooms" render={({ field }) => (<FormItem><FormLabel>Bedrooms</FormLabel><FormControl><Input type="number" min="0" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                 <FormField control={form.control} name="bathrooms" render={({ field }) => (<FormItem><FormLabel>Bathrooms</FormLabel><FormControl><Input type="number" min="0" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-              </div>
+            <Card>
+                <CardHeader><CardTitle>Property Details</CardTitle></CardHeader>
+                <CardContent className="space-y-8">
+                     <div className="grid md:grid-cols-3 gap-8">
+                        <FormField control={form.control} name="area" render={({ field }) => (<FormItem><FormLabel>Area (in sqft)</FormLabel><FormControl><Input type="number" placeholder="e.g. 1500" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                        <FormField control={form.control} name="bedrooms" render={({ field }) => (<FormItem><FormLabel>Bedrooms</FormLabel><FormControl><Input type="number" min="0" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                        <FormField control={form.control} name="bathrooms" render={({ field }) => (<FormItem><FormLabel>Bathrooms</FormLabel><FormControl><Input type="number" min="0" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                    </div>
+                    <FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="Tell us more about your property..." className="resize-y min-h-[120px]" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                </CardContent>
+            </Card>
+            
+            <Card>
+                <CardHeader><CardTitle>Amenities</CardTitle></CardHeader>
+                <CardContent>
+                    <FormField control={form.control} name="amenities" render={() => (
+                        <FormItem><div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            {amenitiesList.map((item) => (<FormField key={item.id} control={form.control} name="amenities"
+                                render={({ field }) => {
+                                return (<FormItem key={item.id} className="flex flex-row items-start space-x-3 space-y-0">
+                                    <FormControl><Checkbox checked={field.value?.includes(item.id)} onCheckedChange={(checked) => {
+                                            return checked ? field.onChange([...field.value, item.id]) : field.onChange(field.value?.filter((value) => value !== item.id))
+                                        }}/></FormControl><FormLabel className="font-normal">{item.label}</FormLabel></FormItem>)
+                                }}/>
+                            ))}<FormMessage /></div></FormItem>
+                        )}/>
+                </CardContent>
+            </Card>
 
-              <FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="Tell us more about your property..." className="resize-y min-h-[120px]" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-              
-              <FormField control={form.control} name="amenities" render={() => (
-                  <FormItem><div className="mb-4"><FormLabel className="text-lg font-semibold">Amenities</FormLabel></div><div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {amenitiesList.map((item) => (<FormField key={item.id} control={form.control} name="amenities"
-                        render={({ field }) => {
-                          return (<FormItem key={item.id} className="flex flex-row items-start space-x-3 space-y-0">
-                              <FormControl><Checkbox checked={field.value?.includes(item.id)} onCheckedChange={(checked) => {
-                                    return checked ? field.onChange([...field.value, item.id]) : field.onChange(field.value?.filter((value) => value !== item.id))
-                                  }}/></FormControl><FormLabel className="font-normal">{item.label}</FormLabel></FormItem>)
-                        }}/>
-                    ))}<FormMessage /></div></FormItem>
-                )}/>
-
-              <FormItem>
-                <FormLabel className="text-lg font-semibold">Property Photos (up to 10)</FormLabel>
-                <FormControl>
-                    <label htmlFor="photo-upload" className="block border-2 border-dashed border-muted rounded-lg p-6 text-center cursor-pointer hover:border-primary transition-colors">
-                        <UploadCloud className="mx-auto h-12 w-12 text-muted-foreground" />
-                        <p className="mt-2 text-sm text-muted-foreground">
-                        <span className="font-semibold text-primary">Click to upload</span> or drag and drop
-                        </p>
-                        <Input type="file" multiple className="hidden" id="photo-upload" onChange={handleImageChange} accept="image/*" />
-                    </label>
-                </FormControl>
-                 <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-                    {imagePreviews.map((src, index) => (
-                        <div key={src} className="relative group">
-                            <Image src={src} alt={`Preview ${index}`} width={150} height={100} className="w-full h-24 object-cover rounded-md" />
-                            <Button type="button" variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => removeImage(index)}>
-                                <X className="h-4 w-4" /><span className="sr-only">Remove image</span>
-                            </Button>
+            <Card>
+                <CardHeader><CardTitle>Property Photos</CardTitle><CardDescription>You can upload up to 10 photos.</CardDescription></CardHeader>
+                <CardContent>
+                    <FormItem>
+                        <FormControl>
+                            <label htmlFor="photo-upload" className="block border-2 border-dashed border-muted rounded-lg p-6 text-center cursor-pointer hover:border-primary transition-colors">
+                                <UploadCloud className="mx-auto h-12 w-12 text-muted-foreground" />
+                                <p className="mt-2 text-sm text-muted-foreground"><span className="font-semibold text-primary">Click to upload</span> or drag and drop</p>
+                                <Input type="file" multiple className="hidden" id="photo-upload" onChange={handleImageChange} accept="image/*" />
+                            </label>
+                        </FormControl>
+                        <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                            {imagePreviews.map((src, index) => (
+                                <div key={src} className="relative group">
+                                    <Image src={src} alt={`Preview ${index}`} width={150} height={100} className="w-full h-24 object-cover rounded-md" />
+                                    <Button type="button" variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => removeImage(index)}>
+                                        <X className="h-4 w-4" /><span className="sr-only">Remove image</span>
+                                    </Button>
+                                </div>
+                            ))}
                         </div>
-                    ))}
-                 </div>
-                <FormMessage />
-              </FormItem>
+                        <FormMessage />
+                    </FormItem>
+                </CardContent>
+            </Card>
               
-              <div className="space-y-4 pt-4 border-t">
-                 <h3 className="text-lg font-semibold">Contact Information</h3>
-                 <div className="grid md:grid-cols-2 gap-8">
+            <Card>
+                <CardHeader><CardTitle>Contact Information</CardTitle></CardHeader>
+                <CardContent className="grid md:grid-cols-2 gap-8">
                     <FormField control={form.control} name="contactName" render={({ field }) => (<FormItem><FormLabel>Contact Person Name</FormLabel><FormControl><Input placeholder="Your Name" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                     <FormField control={form.control} name="contactPhone" render={({ field }) => (<FormItem><FormLabel>Contact Phone</FormLabel><FormControl><Input type="tel" placeholder="10-digit number" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                 </div>
-              </div>
+                </CardContent>
+            </Card>
 
-
-              <Button type="submit" size="lg" className="w-full">Review & Submit Listing</Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+            <Button type="submit" size="lg" className="w-full">Review & Submit Listing</Button>
+          </form>
+        </Form>
+      </div>
     </div>
   )
 }
+
+    
