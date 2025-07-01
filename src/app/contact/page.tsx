@@ -61,12 +61,12 @@ export default function ContactPage() {
           </CardContent>
         </Card>
         
-        <div className="space-y-6">
-          <div className="text-center lg:text-left">
-             <h2 className="text-3xl font-headline">Frequently Asked Questions</h2>
-             <p className="text-muted-foreground">Find answers to common questions below.</p>
-          </div>
-          <Card className="p-4">
+        <Card>
+          <CardHeader className="text-center lg:text-left">
+             <CardTitle className="text-3xl font-headline">Frequently Asked Questions</CardTitle>
+             <CardDescription>Find answers to common questions below.</CardDescription>
+          </CardHeader>
+          <CardContent>
             <Accordion type="single" collapsible className="w-full">
               {faqs.map((faq, index) => (
                 <AccordionItem key={index} value={`item-${index}`}>
@@ -77,8 +77,8 @@ export default function ContactPage() {
                 </AccordionItem>
               ))}
             </Accordion>
-          </Card>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
