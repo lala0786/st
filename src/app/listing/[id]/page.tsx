@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { 
-    BedDouble, Bath, AreaChart, MapPin, Phone, MessageCircle, CheckCircle, Car, Zap, Shield, Droplets, Flower2, Home
+    BedDouble, Bath, AreaChart, MapPin, Phone, MessageCircle, CheckCircle, Car, Zap, Shield, Droplets, Flower2, Home, User
 } from 'lucide-react';
 import React from 'react';
 
@@ -168,5 +168,3 @@ export default function ListingDetailPage({ params }: { params: { id: string } }
     </div>
   );
 }
-
-    
