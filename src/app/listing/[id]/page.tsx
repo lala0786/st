@@ -24,7 +24,14 @@ const amenityIcons: { [key: string]: React.ReactNode } = {
     'Security': <Shield className="h-6 w-6 text-primary" />,
     'Water Supply': <Droplets className="h-6 w-6 text-primary" />,
     'Garden': <Flower2 className="h-6 w-6 text-primary" />,
-    'Lift': <Home className="h-6 w-6 text-primary" />, // Using Home as a placeholder
+    'Lift': <Home className="h-6 w-6 text-primary" />,
+    'Gated Community': <Shield className="h-6 w-6 text-primary" />,
+    'Road': <MapPin className="h-6 w-6 text-primary" />,
+    'Servant Quarters': <User className="h-6 w-6 text-primary" />,
+    'Main Road Facing': <MapPin className="h-6 w-6 text-primary" />,
+    'Private Pool': <Droplets className="h-6 w-6 text-primary" />,
+    'Gym': <Zap className="h-6 w-6 text-primary" />,
+    'Clubhouse': <Home className="h-6 w-6 text-primary" />,
   };
 
 
@@ -102,16 +109,34 @@ export default function ListingDetailPage({ params }: { params: { id: string } }
               </CardContent>
             </Card>
             
-            <Card>
-              <CardHeader><CardTitle>Amenities</CardTitle></CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-6 gap-x-4">
-                  {property.amenities.map((amenity) => (
-                    <div key={amenity} className="flex items-center gap-3">
-                      {amenityIcons[amenity] || <CheckCircle className="h-6 w-6 text-primary" />}
-                      <span className="font-medium text-muted-foreground">{amenity}</span>
+            {property.amenities.length > 0 && (
+                <Card className="mb-8">
+                <CardHeader><CardTitle>Amenities</CardTitle></CardHeader>
+                <CardContent>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-6 gap-x-4">
+                    {property.amenities.map((amenity) => (
+                        <div key={amenity} className="flex items-center gap-3">
+                        {amenityIcons[amenity] || <CheckCircle className="h-6 w-6 text-primary" />}
+                        <span className="font-medium text-muted-foreground">{amenity}</span>
+                        </div>
+                    ))}
                     </div>
-                  ))}
+                </CardContent>
+                </Card>
+            )}
+
+            <Card>
+              <CardHeader><CardTitle>Location</CardTitle></CardHeader>
+              <CardContent>
+                <div className="aspect-video rounded-lg overflow-hidden border">
+                    <Image 
+                        src="https://placehold.co/800x450.png"
+                        alt="Map placeholder"
+                        width={800}
+                        height={450}
+                        className="w-full h-full object-cover"
+                        data-ai-hint="map"
+                    />
                 </div>
               </CardContent>
             </Card>
@@ -143,3 +168,5 @@ export default function ListingDetailPage({ params }: { params: { id: string } }
     </div>
   );
 }
+
+    
