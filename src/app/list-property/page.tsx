@@ -9,14 +9,22 @@ import { Input } from "@/components/ui/input"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState } from "react"
+import Image from "next/image"
+import { UploadCloud } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 
 const formSchema = z.object({
   propertyType: z.enum(["Flat", "House", "Plot", "Commercial"], { required_error: "Please select a property type." }),
   listingType: z.enum(["Sell", "Rent"], { required_error: "Please select a listing type." }),
   location: z.string().min(5, "Location is required. Please be specific."),
+  photos: z.custom<FileList>().refine((files) => files?.length > 0, "At least one photo is required."),
 })
 
-export default function PostPropertyStep1() {
+export default function PostPropertyPage() {
+  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
+  const { toast } = useToast();
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {},
@@ -24,20 +32,27 @@ export default function PostPropertyStep1() {
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     console.log(values)
-    // Navigate to next step
+    toast({
+        title: "Property Listed!",
+        description: "Your property has been submitted for review.",
+    })
+    // Here you would handle the form submission, e.g., upload files and save data.
   }
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      const newPreviews = Array.from(files).map(file => URL.createObjectURL(file));
+      setPhotoPreviews(newPreviews);
+    }
+  };
 
   return (
     <div className="container mx-auto px-4 md:px-6 py-12 flex justify-center">
-      <Card className="w-full max-w-lg">
+      <Card className="w-full max-w-2xl">
         <CardHeader>
           <CardTitle>Post a new Property</CardTitle>
-          <div className="pt-2">
-            <div className="text-sm font-medium text-muted-foreground">Step 1 of 4</div>
-            <div className="w-full bg-muted rounded-full h-2.5 mt-1">
-              <div className="bg-primary h-2.5 rounded-full" style={{ width: "25%" }}></div>
-            </div>
-          </div>
+          <FormDescription>Fill in the details below to list your property.</FormDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -114,8 +129,55 @@ export default function PostPropertyStep1() {
                 )}
               />
 
+              <FormField
+                control={form.control}
+                name="photos"
+                render={({ field: { onChange, value, ...rest } }) => (
+                  <FormItem>
+                    <FormLabel>Property Photos</FormLabel>
+                     <FormControl>
+                        <label htmlFor="photo-upload" className="block border-2 border-dashed border-muted rounded-lg p-6 text-center cursor-pointer hover:border-primary transition-colors">
+                            {photoPreviews.length > 0 ? (
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                                    {photoPreviews.map((src, index) => (
+                                        <div key={index} className="relative aspect-square">
+                                            <Image src={src} alt={`Preview ${index + 1}`} fill className="object-cover rounded-md" />
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <>
+                                    <UploadCloud className="mx-auto h-12 w-12 text-muted-foreground" />
+                                    <p className="mt-2 text-sm text-muted-foreground">
+                                    <span className="font-semibold text-primary">Click to upload</span> or drag and drop
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">PNG, JPG, GIF up to 10MB</p>
+                                </>
+                            )}
+                            <Input 
+                                id="photo-upload" 
+                                type="file" 
+                                className="hidden"
+                                {...rest}
+                                onChange={(e) => {
+                                    handlePhotoChange(e);
+                                    onChange(e.target.files);
+                                }} 
+                                accept="image/*" 
+                                multiple 
+                            />
+                        </label>
+                    </FormControl>
+                    <FormDescription>
+                      Add beautiful photos of your property to attract more buyers or tenants.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+                />
+
               <Button type="submit" size="lg" className="w-full">
-                Next
+                Submit Property
               </Button>
             </form>
           </Form>
