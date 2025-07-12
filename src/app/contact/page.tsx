@@ -10,7 +10,7 @@ const faqs = [
   },
   {
     question: "Are there any charges for listing a property?",
-    answer: "Currently, listing your property on Pithampur Property Hub is completely free. There are no hidden charges."
+    answer: "Currently, listing your property on Pithampur Homes is completely free. There are no hidden charges."
   },
   {
     question: "How can I contact a property seller?",
@@ -35,7 +35,7 @@ export default function ContactPage() {
             <div className="space-y-4">
               <h3 className="text-xl font-semibold flex items-center gap-2"><MapPin className="h-5 w-5 text-primary" /> Our Office</h3>
               <div className="pl-7 text-muted-foreground">
-                  <p className="font-medium text-foreground">Pithampur Property Hub</p>
+                  <p className="font-medium text-foreground">Pithampur Homes</p>
                   <p>123 Industrial Area, Sector 2</p>
                   <p>Pithampur, Madhya Pradesh 454775</p>
               </div>
@@ -54,7 +54,7 @@ export default function ContactPage() {
                 <Mail className="h-5 w-5 text-primary" />
                  <div>
                   <p className="font-medium">Email Us</p>
-                  <a href="mailto:contact@pithampurpropertyhub.com" className="text-muted-foreground hover:text-primary">contact@pithampurpropertyhub.com</a>
+                  <a href="mailto:contact@pithampurhomes.com" className="text-muted-foreground hover:text-primary">contact@pithampurhomes.com</a>
                 </div>
               </div>
             </div>

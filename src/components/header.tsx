@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Home, Bell, User as UserIcon, ChevronDown } from "lucide-react";
+import { Home, Bell, User as UserIcon, ChevronDown, Sparkles, LogOut } from "lucide-react";
 import React from "react";
 
 export function Header() {
@@ -26,6 +26,12 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-4">
+          <Link href="/property-qa">
+            <Button variant="ghost" size="icon" className="hidden sm:inline-flex">
+              <Sparkles className="h-5 w-5 text-accent" />
+              <span className="sr-only">AI Assistant</span>
+            </Button>
+          </Link>
           <Button variant="ghost" size="icon">
             <Bell className="h-5 w-5" />
             <span className="sr-only">Notifications</span>
@@ -47,7 +53,7 @@ export function Header() {
                   <span>Profile</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setIsLoggedIn(false)}>
-                  <LogOutIcon className="mr-2 h-4 w-4" />
+                  <LogOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -61,25 +67,4 @@ export function Header() {
       </div>
     </header>
   );
-}
-
-function LogOutIcon(props: React.ComponentProps<"svg">) {
-    return (
-        <svg
-            {...props}
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-            <polyline points="16 17 21 12 16 7" />
-            <line x1="21" x2="9" y1="12" y2="12" />
-        </svg>
-    )
 }
