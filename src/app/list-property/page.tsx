@@ -42,6 +42,14 @@ export default function PostPropertyPage() {
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
+      if (files.length > 10) {
+        toast({
+          title: "Too many photos",
+          description: "You can upload a maximum of 10 photos.",
+          variant: "destructive"
+        })
+        return;
+      }
       const newPreviews = Array.from(files).map(file => URL.createObjectURL(file));
       setPhotoPreviews(newPreviews);
     }
@@ -50,12 +58,12 @@ export default function PostPropertyPage() {
   return (
     <div className="container mx-auto px-4 md:px-6 py-12 flex justify-center">
       <Card className="w-full max-w-2xl">
-        <CardHeader>
-          <CardTitle>Post a new Property</CardTitle>
-          <FormDescription>Fill in the details below to list your property.</FormDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
+        <Form {...form}>
+          <CardHeader>
+            <CardTitle>Post a new Property</CardTitle>
+            <FormDescription>Fill in the details below to list your property.</FormDescription>
+          </CardHeader>
+          <CardContent>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               <FormField
                 control={form.control}
@@ -151,7 +159,7 @@ export default function PostPropertyPage() {
                                     <p className="mt-2 text-sm text-muted-foreground">
                                     <span className="font-semibold text-primary">Click to upload</span> or drag and drop
                                     </p>
-                                    <p className="text-xs text-muted-foreground">PNG, JPG, GIF up to 10MB</p>
+                                    <p className="text-xs text-muted-foreground">Up to 10 photos (PNG, JPG)</p>
                                 </>
                             )}
                             <Input 
@@ -163,7 +171,7 @@ export default function PostPropertyPage() {
                                     handlePhotoChange(e);
                                     onChange(e.target.files);
                                 }} 
-                                accept="image/*" 
+                                accept="image/png, image/jpeg" 
                                 multiple 
                             />
                         </label>
@@ -180,8 +188,8 @@ export default function PostPropertyPage() {
                 Submit Property
               </Button>
             </form>
-          </Form>
-        </CardContent>
+          </CardContent>
+        </Form>
       </Card>
     </div>
   )
