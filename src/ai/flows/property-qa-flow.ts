@@ -21,7 +21,9 @@ const PropertyQuestionInputSchema = z.object({
 export type PropertyQuestionInput = z.infer<typeof PropertyQuestionInputSchema>;
 
 export const PropertyQuestionOutputSchema = z.object({
-  answer: z.string().describe("The answer to the user's question."),
+  isProperty: z.boolean().describe('Whether the image appears to contain a building or property.'),
+  propertyType: z.string().describe('The type of property identified, e.g., "Apartment Building", "Detached House", "Commercial Storefront", or "Empty Plot".'),
+  answer: z.string().describe("The answer to the user's question based on the photo."),
 });
 export type PropertyQuestionOutput = z.infer<typeof PropertyQuestionOutputSchema>;
 
@@ -36,10 +38,14 @@ const prompt = ai.definePrompt({
   output: {schema: PropertyQuestionOutputSchema},
   prompt: `You are a real estate expert. Your task is to answer a question about a property, based on a photo.
 
+First, determine if the photo actually contains a building, property, or plot of land. 
+Then, identify the type of property shown.
+Finally, provide a helpful and concise answer to the user's question based on the visual information in the photo.
+
 Photo: {{media url=photoDataUri}}
 Question: {{{question}}}
 
-Please provide a helpful and concise answer to the question based on the visual information in the photo.`,
+Answer the user's question directly, assuming the context of the image.`,
 });
 
 const propertyQuestionFlow = ai.defineFlow(

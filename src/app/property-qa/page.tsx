@@ -7,9 +7,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, UploadCloud, Sparkles } from 'lucide-react';
+import { Loader2, UploadCloud, Sparkles, Building, HelpCircle, Bot } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { answerPropertyQuestion, PropertyQuestionOutput } from '@/ai/flows/property-qa-flow';
+import { Badge } from '@/components/ui/badge';
 
 export default function PropertyQAPage() {
   const [photo, setPhoto] = useState<File | null>(null);
@@ -23,6 +24,7 @@ export default function PropertyQAPage() {
     const file = e.target.files?.[0] || null;
     if (file) {
       setPhoto(file);
+      setResult(null);
       const reader = new FileReader();
       reader.onloadend = () => {
         setPhotoPreview(reader.result as string);
@@ -72,66 +74,105 @@ export default function PropertyQAPage() {
 
   return (
     <div className="container mx-auto px-4 md:px-6 py-12">
-      <Card className="max-w-2xl mx-auto">
-        <CardHeader>
-          <CardTitle className="text-3xl font-headline flex items-center gap-2">
-            <Sparkles className="text-primary" /> AI Property Assistant
-          </CardTitle>
-          <CardDescription>
-            Have a question about a property? Upload a photo and ask our AI assistant.
-          </CardDescription>
-        </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="photo-upload">Property Photo</Label>
-              <label htmlFor="photo-upload" className="block border-2 border-dashed border-muted rounded-lg p-6 text-center cursor-pointer hover:border-primary transition-colors">
-                {photoPreview ? (
-                  <Image src={photoPreview} alt="Property preview" width={400} height={250} className="mx-auto rounded-md object-contain max-h-56" />
+      <div className="grid gap-8 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-3xl font-headline flex items-center gap-2">
+              <Sparkles className="text-primary" /> AI Property Assistant
+            </CardTitle>
+            <CardDescription>
+              Have a question about a property? Upload a photo and ask our AI.
+            </CardDescription>
+          </CardHeader>
+          <form onSubmit={handleSubmit}>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="photo-upload">Property Photo</Label>
+                <label htmlFor="photo-upload" className="block border-2 border-dashed border-muted rounded-lg p-6 text-center cursor-pointer hover:border-primary transition-colors">
+                  {photoPreview ? (
+                    <Image src={photoPreview} alt="Property preview" width={400} height={250} className="mx-auto rounded-md object-contain max-h-56" />
+                  ) : (
+                      <>
+                          <UploadCloud className="mx-auto h-12 w-12 text-muted-foreground" />
+                          <p className="mt-2 text-sm text-muted-foreground">
+                          <span className="font-semibold text-primary">Click to upload</span> a photo
+                          </p>
+                      </>
+                  )}
+                  <Input id="photo-upload" type="file" className="hidden" onChange={handlePhotoChange} accept="image/*" />
+                </label>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="question">Your Question</Label>
+                <Textarea
+                  id="question"
+                  placeholder="e.g., What style of architecture is this? or What improvements could I make to increase its value?"
+                  value={question}
+                  onChange={(e) => setQuestion(e.target.value)}
+                  className="resize-y min-h-[100px]"
+                />
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button type="submit" disabled={loading || !photo || !question} className="w-full">
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Thinking...
+                  </>
                 ) : (
-                    <>
-                        <UploadCloud className="mx-auto h-12 w-12 text-muted-foreground" />
-                        <p className="mt-2 text-sm text-muted-foreground">
-                        <span className="font-semibold text-primary">Click to upload</span> a photo
-                        </p>
-                    </>
+                  'Ask AI'
                 )}
-                <Input id="photo-upload" type="file" className="hidden" onChange={handlePhotoChange} accept="image/*" />
-              </label>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="question">Your Question</Label>
-              <Textarea
-                id="question"
-                placeholder="e.g., What style of architecture is this? or What improvements could I make to increase its value?"
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-                className="resize-y min-h-[100px]"
-              />
-            </div>
-          </CardContent>
-          <CardFooter>
-            <Button type="submit" disabled={loading} className="w-full">
+              </Button>
+            </CardFooter>
+          </form>
+        </Card>
+
+        <Card className="flex flex-col">
+           <CardHeader>
+             <CardTitle className="flex items-center gap-2">
+               <Bot className="text-primary" /> AI Response
+             </CardTitle>
+             <CardDescription>The AI's analysis will appear here.</CardDescription>
+           </CardHeader>
+           <CardContent className="flex-grow flex items-center justify-center">
               {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Thinking...
-                </>
+                 <div className="text-center text-muted-foreground">
+                    <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
+                    <p>Analyzing image and question...</p>
+                 </div>
+              ) : result ? (
+                 <div className="space-y-4 w-full">
+                    {result.isProperty ? (
+                       <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
+                          <Building className="h-6 w-6 text-secondary" />
+                          <div>
+                            <p className="font-semibold">Property Identified</p>
+                            <p className="text-sm text-muted-foreground">{result.propertyType}</p>
+                          </div>
+                       </div>
+                    ) : (
+                       <div className="flex items-center gap-3 p-3 bg-accent/10 rounded-lg">
+                          <HelpCircle className="h-6 w-6 text-accent" />
+                           <div>
+                              <p className="font-semibold">No Property Detected</p>
+                              <p className="text-sm text-muted-foreground">The AI could not identify a property in the image.</p>
+                          </div>
+                       </div>
+                    )}
+                    <div>
+                        <h3 className="font-semibold mb-2">Answer:</h3>
+                        <p className="text-muted-foreground leading-relaxed">{result.answer}</p>
+                    </div>
+                 </div>
               ) : (
-                'Ask AI'
+                <div className="text-center text-muted-foreground">
+                    <p>Upload a photo and ask a question to get started.</p>
+                </div>
               )}
-            </Button>
-          </CardFooter>
-        </form>
-        {result && (
-          <CardContent>
-            <div className="mt-6 p-4 bg-muted/50 rounded-lg">
-                <h3 className="font-semibold mb-2">AI Assistant's Answer:</h3>
-                <p className="text-muted-foreground">{result.answer}</p>
-            </div>
-          </CardContent>
-        )}
-      </Card>
+           </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
