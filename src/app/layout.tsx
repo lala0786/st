@@ -3,6 +3,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { Header } from '@/components/header';
 import { BottomNav } from '@/components/bottom-nav';
+import { AnalyticsProvider } from '@/components/analytics-provider';
 
 export const metadata: Metadata = {
   title: 'Pithampur Homes',
@@ -16,6 +17,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full">
+       <AnalyticsProvider />
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
