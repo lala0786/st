@@ -13,32 +13,22 @@ const firebaseConfig = {
 };
 
 const areAllKeysPresent = 
-    typeof firebaseConfig.apiKey === 'string' &&
-    firebaseConfig.apiKey.length > 0 &&
-    typeof firebaseConfig.authDomain === 'string' &&
-    typeof firebaseConfig.projectId === 'string' &&
-    typeof firebaseConfig.storageBucket === 'string' &&
-    typeof firebaseConfig.messagingSenderId === 'string' &&
-    typeof firebaseConfig.appId === 'string';
+    firebaseConfig.apiKey &&
+    firebaseConfig.authDomain &&
+    firebaseConfig.projectId &&
+    firebaseConfig.storageBucket &&
+    firebaseConfig.messagingSenderId &&
+    firebaseConfig.appId;
 
-let app: FirebaseApp | null = null;
-let auth: Auth | null = null;
+let app: FirebaseApp;
+let auth: Auth;
 let analytics: Promise<Analytics | null> | null = null;
 
 if (areAllKeysPresent) {
-  try {
     app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
     auth = getAuth(app);
-    analytics = isSupported().then(yes => (yes ? getAnalytics(app) : null));
-  } catch (error) {
-    console.error("Firebase initialization failed:", error);
-    app = null;
-    auth = null;
-    analytics = null;
-  }
-} else {
-    if (process.env.NODE_ENV === 'development') {
-      console.warn("Firebase config is incomplete. Firebase features will be disabled.");
+    if (typeof window !== 'undefined') {
+        analytics = isSupported().then(yes => (yes ? getAnalytics(app) : null));
     }
 }
 
