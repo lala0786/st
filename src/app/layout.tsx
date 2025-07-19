@@ -8,6 +8,7 @@ import { AnalyticsProvider } from '@/components/analytics-provider';
 export const metadata: Metadata = {
   title: 'Pithampur Homes',
   description: 'Find your dream property in Pithampur.',
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({
