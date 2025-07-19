@@ -4,10 +4,13 @@ import { Toaster } from '@/components/ui/toaster';
 import { Header } from '@/components/header';
 import { BottomNav } from '@/components/bottom-nav';
 import { AnalyticsProvider } from '@/components/analytics-provider';
+import { Inter } from 'next/font/google';
+
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
-  title: 'Pithampur Homes',
-  description: 'Find your dream property in Pithampur.',
+  title: 'Pithampur Property Hub',
+  description: 'Find your dream property in Pithampur. Buy, Sell, Rent properties with ease.',
   manifest: '/manifest.json',
 };
 
@@ -17,12 +20,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full">
+    <html lang="en" className={`${inter.variable} h-full`}>
        <AnalyticsProvider />
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased flex flex-col min-h-screen bg-background">
         <Header />
