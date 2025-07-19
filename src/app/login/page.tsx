@@ -27,7 +27,7 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4">
-             <Button variant="outline" className="w-full">
+             <Button variant="outline" className="w-full" type="button">
               <GoogleIcon className="mr-2 h-4 w-4" />
               Login with Google
             </Button>
@@ -42,44 +42,50 @@ export default function LoginPage() {
                 </span>
               </div>
             </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="m@example.com"
-                required
-              />
-            </div>
-            <div className="grid gap-2">
-              <div className="flex items-center">
-                <Label htmlFor="password">Password</Label>
+            <form>
+              <div className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="m@example.com"
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <div className="flex items-center">
+                    <Label htmlFor="password">Password</Label>
+                  </div>
+                  <Input id="password" type="password" required />
+                </div>
+                <Button type="submit" className="w-full">
+                  Login with Email
+                </Button>
               </div>
-              <Input id="password" type="password" required />
-            </div>
-            <Button type="submit" className="w-full">
-              Login with Email
-            </Button>
+            </form>
             
             <Separator className="my-2" />
-
-            <div className="grid gap-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <div className="flex gap-2">
-                    <Input
-                        id="phone"
-                        type="tel"
-                        placeholder="10-digit mobile number"
-                        required
-                        className="flex-grow"
-                    />
-                     <Button>Send OTP</Button>
-                </div>
-            </div>
-             <Button type="submit" variant="secondary" className="w-full">
-                Login with OTP
-            </Button>
+            <form>
+              <div className="grid gap-4">
+                  <div className="grid gap-2">
+                      <Label htmlFor="phone">Phone Number</Label>
+                      <div className="flex gap-2">
+                          <Input
+                              id="phone"
+                              type="tel"
+                              placeholder="10-digit mobile number"
+                              required
+                              className="flex-grow"
+                          />
+                          <Button type="submit">Send OTP</Button>
+                      </div>
+                  </div>
+                  <Button type="submit" variant="secondary" className="w-full">
+                      Login with OTP
+                  </Button>
+              </div>
+            </form>
 
           </div>
           <div className="mt-4 text-center text-sm">
