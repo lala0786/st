@@ -9,15 +9,24 @@ export function AnalyticsProvider() {
   const pathname = usePathname();
 
   useEffect(() => {
-    const logPageView = async () => {
-        if (!analytics) return; // Do nothing if analytics is not initialized
+    // Do nothing if Firebase Analytics is not initialized
+    if (!analytics) {
+      return;
+    }
 
-        const analyticsInstance = await analytics;
-        if (analyticsInstance) {
-            logEvent(analyticsInstance, 'page_view', {
-                page_path: pathname,
-                page_title: document.title,
-            });
+    const logPageView = async () => {
+        try {
+            const analyticsInstance = await analytics;
+            if (analyticsInstance) {
+                logEvent(analyticsInstance, 'page_view', {
+                    page_path: pathname,
+                    page_title: document.title,
+                });
+            }
+        } catch (error) {
+            // This can happen if the promise rejects (e.g., in an unsupported environment)
+            // We can silently ignore it or log it for debugging if needed.
+            // console.error("Analytics logging failed:", error);
         }
     }
     

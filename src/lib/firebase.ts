@@ -12,45 +12,34 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
-// A robust check to ensure all necessary keys are strings and not just truthy.
 const areAllKeysPresent = 
     typeof firebaseConfig.apiKey === 'string' &&
+    firebaseConfig.apiKey.length > 0 &&
     typeof firebaseConfig.authDomain === 'string' &&
     typeof firebaseConfig.projectId === 'string' &&
     typeof firebaseConfig.storageBucket === 'string' &&
     typeof firebaseConfig.messagingSenderId === 'string' &&
-    typeof firebaseConfig.appId === 'string' &&
-    firebaseConfig.apiKey.length > 0; // Check that API key is not an empty string
+    typeof firebaseConfig.appId === 'string';
 
 let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
 let analytics: Promise<Analytics | null> | null = null;
 
-// Initialize Firebase only if all config keys are present
 if (areAllKeysPresent) {
   try {
     app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
     auth = getAuth(app);
-    // Only initialize analytics if it's supported and the app was initialized
-    if (app) {
-        analytics = isSupported().then(yes => (yes ? getAnalytics(app) : null));
-    } else {
-        analytics = Promise.resolve(null);
-    }
+    analytics = isSupported().then(yes => (yes ? getAnalytics(app) : null));
   } catch (error) {
     console.error("Firebase initialization failed:", error);
-    // Reset all to null in case of error
     app = null;
     auth = null;
-    analytics = Promise.resolve(null);
+    analytics = null;
   }
 } else {
-    // This warning is helpful for developers during setup.
     if (process.env.NODE_ENV === 'development') {
-      console.warn("Firebase config is incomplete. Firebase features will be disabled. Please add your Firebase credentials to the .env file.");
+      console.warn("Firebase config is incomplete. Firebase features will be disabled.");
     }
-    // Ensure analytics is a resolved null promise if keys are missing
-    analytics = Promise.resolve(null);
 }
 
 export { app, auth, analytics };
