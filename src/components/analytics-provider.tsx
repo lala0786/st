@@ -10,6 +10,8 @@ export function AnalyticsProvider() {
 
   useEffect(() => {
     const logPageView = async () => {
+        if (!analytics) return; // Do nothing if analytics is not initialized
+
         const analyticsInstance = await analytics;
         if (analyticsInstance) {
             logEvent(analyticsInstance, 'page_view', {
