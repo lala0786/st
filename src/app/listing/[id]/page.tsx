@@ -49,6 +49,8 @@ export default function ListingDetailPage({ params }: { params: { id: string } }
     Shop: 'shop interior',
   }
 
+  const mapSrc = `https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&q=${encodeURIComponent(property.location)}`;
+
   return (
     <div className="bg-background">
       <div className="container mx-auto px-4 md:px-6 py-8">
@@ -129,14 +131,20 @@ export default function ListingDetailPage({ params }: { params: { id: string } }
               <CardHeader><CardTitle>Location</CardTitle></CardHeader>
               <CardContent>
                 <div className="aspect-video rounded-lg overflow-hidden border">
-                    <Image 
-                        src="https://placehold.co/800x450.png"
-                        alt="Map placeholder"
-                        width={800}
-                        height={450}
-                        className="w-full h-full object-cover"
-                        data-ai-hint="map"
-                    />
+                  {process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ? (
+                    <iframe
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0 }}
+                      loading="lazy"
+                      allowFullScreen
+                      src={mapSrc}>
+                    </iframe>
+                  ) : (
+                    <div className="w-full h-full bg-muted flex items-center justify-center">
+                      <p className="text-muted-foreground">Map requires Google Maps API Key.</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
