@@ -16,13 +16,14 @@ let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
 let analytics: Promise<Analytics | null> | null = null;
 
+// A robust check to ensure all necessary keys are strings and not just truthy.
 const areAllKeysPresent = 
-    firebaseConfig.apiKey &&
-    firebaseConfig.authDomain &&
-    firebaseConfig.projectId &&
-    firebaseConfig.storageBucket &&
-    firebaseConfig.messagingSenderId &&
-    firebaseConfig.appId;
+    typeof firebaseConfig.apiKey === 'string' &&
+    typeof firebaseConfig.authDomain === 'string' &&
+    typeof firebaseConfig.projectId === 'string' &&
+    typeof firebaseConfig.storageBucket === 'string' &&
+    typeof firebaseConfig.messagingSenderId === 'string' &&
+    typeof firebaseConfig.appId === 'string';
 
 // Initialize Firebase only if all config keys are present
 if (areAllKeysPresent) {
@@ -34,10 +35,14 @@ if (areAllKeysPresent) {
     console.error("Firebase initialization failed:", error);
     app = null;
     auth = null;
-    analytics = null;
+    analytics = Promise.resolve(null);
   }
 } else {
-    console.warn("Firebase config is incomplete. Firebase features will be disabled.");
+    // This warning is helpful for developers during setup.
+    if (process.env.NODE_ENV === 'development') {
+      console.warn("Firebase config is incomplete or invalid. Firebase features will be disabled.");
+    }
+    analytics = Promise.resolve(null);
 }
 
 export { app, auth, analytics };
