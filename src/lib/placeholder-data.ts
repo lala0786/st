@@ -21,6 +21,7 @@ export const properties: Property[] = [
     sellerName: 'Alfej Shaikh',
     sellerPhone: '8359069987',
     featured: true,
+    tag: 'Just Listed',
   },
   {
     id: '2',
@@ -40,6 +41,7 @@ export const properties: Property[] = [
     sellerName: 'Suresh Singh',
     sellerPhone: '9876543211',
     featured: false,
+    tag: 'Popular',
   },
   {
     id: '3',
@@ -98,6 +100,7 @@ export const properties: Property[] = [
     sellerName: 'Priya Jain',
     sellerPhone: '9876543214',
     featured: true,
+    tag: 'Price Drop',
   },
   {
     id: '6',
@@ -113,7 +116,7 @@ export const properties: Property[] = [
     images: [
       'https://images.unsplash.com/photo-1613490493576-7fde63acd811?q=80&w=800&auto=format&fit=crop',
       'https://images.unsplash.com/photo-1613977257363-707ba9348227?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1613977257522-6b9d60a103c2?q=80&w=800&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1613977257367-1584f50dc6e0?q=80&w=800&auto=format&fit=crop',
       'https://images.unsplash.com/photo-1613977257367-1584f50dc6e0?q=80&w=800&auto=format&fit=crop',
     ],
     amenities: ['Private Pool', 'Gym', 'Clubhouse', 'Security'],

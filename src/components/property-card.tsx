@@ -28,12 +28,21 @@ export function PropertyCard({ property, variant = 'default' }: PropertyCardProp
     Shop: 'storefront building',
   }
 
+  const getBadge = () => {
+    if (property.tag) {
+      const variant = property.tag === 'Price Drop' ? 'destructive' : 'accent';
+      return <Badge variant={variant} className="absolute top-2 left-2 z-10">{property.tag}</Badge>
+    }
+    return null;
+  }
+
   return (
     <Card className={cn(
         "overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 group w-full",
         variant === 'carousel' ? 'min-w-[300px]' : ''
     )}>
       <div className="relative">
+        {getBadge()}
         <Link href={`/listing/${property.id}`} className="block">
           <Image
             src={property.images[0]}

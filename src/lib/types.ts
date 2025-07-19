@@ -14,4 +14,5 @@ export type Property = {
   sellerName: string;
   sellerPhone: string;
   featured: boolean;
+  tag?: 'Just Listed' | 'Price Drop' | 'Popular';
 };
