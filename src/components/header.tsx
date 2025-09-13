@@ -5,10 +5,39 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Home, Bell, User as UserIcon, ChevronDown, Sparkles, LogOut } from "lucide-react";
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { auth } from "@/lib/firebase";
+import { onAuthStateChanged, signOut, User } from "firebase/auth";
+import { useRouter } from "next/navigation";
 
 export function Header() {
-  const [isLoggedIn, setIsLoggedIn] = React.useState(true);
+  const [user, setUser] = useState<User | null>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      router.push("/"); // Redirect to home page after logout
+    } catch (error) {
+      console.error("Error signing out: ", error);
+    }
+  };
+  
+  const getInitials = (name: string | null | undefined) => {
+    if (!name) return "P";
+    const names = name.split(' ');
+    if (names.length > 1) {
+      return names[0].charAt(0) + names[names.length - 1].charAt(0);
+    }
+    return name.charAt(0);
+  }
 
   return (
     <header className="bg-card/95 backdrop-blur-sm border-b sticky top-0 z-40">
@@ -37,16 +66,16 @@ export function Header() {
             <span className="sr-only">Notifications</span>
           </Button>
 
-          {isLoggedIn ? (
+          {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Avatar className="h-9 w-9 cursor-pointer">
-                  <AvatarImage src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=400" data-ai-hint="person portrait" alt="User avatar" />
-                  <AvatarFallback>PH</AvatarFallback>
+                  <AvatarImage src={user.photoURL || undefined} data-ai-hint="person portrait" alt={user.displayName || "User avatar"} />
+                  <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
                 </Avatar>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuLabel>{user.displayName || "My Account"}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link href="/profile">
@@ -54,7 +83,7 @@ export function Header() {
                     <span>Profile</span>
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setIsLoggedIn(false)}>
+                <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>
                 </DropdownMenuItem>
