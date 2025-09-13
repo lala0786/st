@@ -20,8 +20,8 @@ const areAllKeysPresent =
     firebaseConfig.messagingSenderId &&
     firebaseConfig.appId;
 
-let app: FirebaseApp;
-let auth: Auth;
+let app: FirebaseApp | null = null;
+let auth: Auth | null = null;
 let analytics: Promise<Analytics | null> | null = null;
 
 if (areAllKeysPresent) {
@@ -30,6 +30,8 @@ if (areAllKeysPresent) {
     if (typeof window !== 'undefined') {
         analytics = isSupported().then(yes => (yes ? getAnalytics(app) : null));
     }
+} else {
+    console.warn("Firebase config is missing. Firebase features will be disabled.");
 }
 
 export { app, auth, analytics };

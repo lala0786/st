@@ -15,13 +15,16 @@ export function Header() {
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-    });
-    return () => unsubscribe();
+    if (auth) {
+      const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+        setUser(currentUser);
+      });
+      return () => unsubscribe();
+    }
   }, []);
 
   const handleLogout = async () => {
+    if (!auth) return;
     try {
       await signOut(auth);
       router.push("/"); // Redirect to home page after logout

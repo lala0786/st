@@ -24,6 +24,14 @@ export default function LoginPage() {
   const { toast } = useToast();
 
   const handleGoogleLogin = async () => {
+    if (!auth) {
+      toast({
+        title: "Configuration Error",
+        description: "Firebase is not configured. Please add API keys.",
+        variant: "destructive",
+      });
+      return;
+    }
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);

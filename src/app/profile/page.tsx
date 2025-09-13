@@ -17,6 +17,10 @@ export default function ProfilePage() {
   const { toast } = useToast();
 
   useEffect(() => {
+    if (!auth) {
+      router.push("/login");
+      return;
+    }
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
@@ -29,6 +33,7 @@ export default function ProfilePage() {
   }, [router]);
 
   const handleLogout = async () => {
+    if (!auth) return;
     try {
       await signOut(auth);
       toast({
