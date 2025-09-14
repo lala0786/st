@@ -12,15 +12,15 @@ import { formatDistanceToNow } from 'date-fns';
 import { useState } from 'react';
 
 interface PropertyCardProps {
-  property: Property;
+  property: Partial<Property>;
   variant?: 'default' | 'carousel';
 }
 
 export function PropertyCard({ property, variant = 'default' }: PropertyCardProps) {
   const [isSaved, setIsSaved] = useState(false);
 
-  const formatPrice = (price: number) => {
-    if (isNaN(price)) return "N/A";
+  const formatPrice = (price: number | undefined) => {
+    if (price === undefined || isNaN(price)) return "N/A";
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR',
@@ -69,7 +69,7 @@ export function PropertyCard({ property, variant = 'default' }: PropertyCardProp
             width={400}
             height={250}
             className="w-full h-52 object-cover"
-            data-ai-hint={propertyTypeHints[property.propertyType] || 'building exterior'}
+            data-ai-hint={propertyTypeHints[property.propertyType || 'House'] || 'building exterior'}
           />
         </Link>
         <Button 
@@ -96,15 +96,15 @@ export function PropertyCard({ property, variant = 'default' }: PropertyCardProp
         <div className="flex justify-between items-center text-muted-foreground text-sm py-2">
           <div className="flex items-center gap-1.5">
             <BedDouble className="w-4 h-4" />
-            <span>{property.bedrooms} Beds</span>
+            <span>{property.bedrooms ?? 0} Beds</span>
           </div>
           <div className="flex items-center gap-1.5">
             <Bath className="w-4 h-4" />
-            <span>{property.bathrooms} Baths</span>
+            <span>{property.bathrooms ?? 0} Baths</span>
           </div>
           <div className="flex items-center gap-1.5">
             <AreaChart className="w-4 h-4" />
-            <span>{property.area} sqft</span>
+            <span>{property.area ?? 0} sqft</span>
           </div>
         </div>
 
@@ -122,13 +122,15 @@ export function PropertyCard({ property, variant = 'default' }: PropertyCardProp
                     </Button>
                 </div>
             </div>
-            <div className="flex justify-between items-center text-xs text-muted-foreground">
-                <p>Posted {postedDate}</p>
-                <div className="flex items-center gap-1">
-                    <Eye className="w-4 h-4" />
-                    <span>{property.views || 0} views</span>
-                </div>
-            </div>
+            {property.createdAt && (
+              <div className="flex justify-between items-center text-xs text-muted-foreground">
+                  <p>Posted {postedDate}</p>
+                  <div className="flex items-center gap-1">
+                      <Eye className="w-4 h-4" />
+                      <span>{property.views || 0} views</span>
+                  </div>
+              </div>
+            )}
         </div>
 
       </CardContent>

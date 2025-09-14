@@ -18,6 +18,6 @@ export type Property = {
   featured: boolean;
   tag?: 'Just Listed' | 'Price Drop' | 'Popular';
   sellerId: string;
-  createdAt: Timestamp;
+  createdAt: Timestamp | null;
   views?: number;
 };

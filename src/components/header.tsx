@@ -50,32 +50,22 @@ export function Header() {
           <span className="hidden sm:inline">Pithampur Homes</span>
         </Link>
         
-        <div className="flex-1 flex justify-center px-4">
-            <Button variant="ghost" className="text-base">
-                Pithampur
-                <ChevronDown className="ml-1 h-4 w-4"/>
+        <nav className="hidden md:flex items-center gap-2">
+            <Button variant="ghost" asChild>
+                <Link href="/dream-home">Dream Home AI</Link>
             </Button>
-        </div>
+             <Button variant="ghost" asChild>
+                <Link href="/interior-designer">Interior Designer</Link>
+            </Button>
+             <Button variant="ghost" asChild>
+                <Link href="/property-qa">Property Q&A</Link>
+            </Button>
+            <Button variant="ghost" asChild>
+                <Link href="/calculator">EMI Calculator</Link>
+            </Button>
+        </nav>
 
         <div className="flex items-center gap-4">
-           <Link href="/calculator">
-            <Button variant="ghost" size="icon" className="hidden sm:inline-flex">
-              <Calculator className="h-5 w-5 text-primary" />
-              <span className="sr-only">EMI Calculator</span>
-            </Button>
-          </Link>
-           <Link href="/interior-designer">
-            <Button variant="ghost" size="icon" className="hidden sm:inline-flex">
-              <Wand2 className="h-5 w-5 text-primary" />
-              <span className="sr-only">AI Interior Designer</span>
-            </Button>
-          </Link>
-          <Link href="/property-qa">
-            <Button variant="ghost" size="icon" className="hidden sm:inline-flex">
-              <Sparkles className="h-5 w-5 text-accent" />
-              <span className="sr-only">AI Property Assistant</span>
-            </Button>
-          </Link>
           <Button variant="ghost" size="icon">
             <Bell className="h-5 w-5" />
             <span className="sr-only">Notifications</span>
