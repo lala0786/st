@@ -45,12 +45,12 @@ export function PropertyCard({ property, variant = 'default' }: PropertyCardProp
         {getBadge()}
         <Link href={`/listing/${property.id}`} className="block">
           <Image
-            src={property.images[0]}
+            src={property.photos[0]}
             alt={property.title}
             width={400}
             height={250}
             className="w-full h-52 object-cover"
-            data-ai-hint={propertyTypeHints[property.type] || 'building exterior'}
+            data-ai-hint={propertyTypeHints[property.propertyType] || 'building exterior'}
           />
         </Link>
         <Button size="icon" variant="secondary" className="absolute top-2 right-2 h-8 w-8 rounded-full bg-card/80 hover:bg-card">
@@ -83,7 +83,7 @@ export function PropertyCard({ property, variant = 'default' }: PropertyCardProp
 
         <div className="flex justify-between items-center pt-2">
             <p className="text-lg font-bold text-foreground">
-                {formatPrice(property.price)} {property.transaction === 'Rent' && <span className="text-sm font-normal text-muted-foreground">/ month</span>}
+                {formatPrice(property.price)} {property.listingType === 'Rent' && <span className="text-sm font-normal text-muted-foreground">/ month</span>}
             </p>
             <div className="flex items-center gap-2">
                 <Button size="sm" className="bg-secondary hover:bg-secondary/90">

@@ -1,6 +1,5 @@
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { properties } from '@/lib/placeholder-data';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,9 @@ import {
     BedDouble, Bath, AreaChart, MapPin, Phone, MessageCircle, CheckCircle, Car, Zap, Shield, Droplets, Flower2, Home, User
 } from 'lucide-react';
 import React from 'react';
+import { db } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import type { Property } from '@/lib/types';
 
 const formatPrice = (price: number) => {
   return new Intl.NumberFormat('en-IN', {
@@ -34,9 +36,28 @@ const amenityIcons: { [key: string]: React.ReactNode } = {
     'Clubhouse': <Home className="h-6 w-6 text-primary" />,
   };
 
+async function getProperty(id: string): Promise<Property | null> {
+    if (!db) {
+        return null;
+    }
+    try {
+        const docRef = doc(db, "properties", id);
+        const docSnap = await getDoc(docRef);
 
-export default function ListingDetailPage({ params }: { params: { id: string } }) {
-  const property = properties.find((p) => p.id === params.id);
+        if (docSnap.exists()) {
+            return { id: docSnap.id, ...docSnap.data() } as Property;
+        } else {
+            return null;
+        }
+    } catch (error) {
+        console.error("Error fetching property: ", error);
+        return null;
+    }
+}
+
+
+export default async function ListingDetailPage({ params }: { params: { id: string } }) {
+  const property = await getProperty(params.id);
 
   if (!property) {
     notFound();
@@ -49,7 +70,9 @@ export default function ListingDetailPage({ params }: { params: { id: string } }
     Shop: 'shop interior',
   }
 
-  const mapSrc = `https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&q=${encodeURIComponent(property.location)}`;
+  const mapSrc = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+    ? `https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&q=${encodeURIComponent(property.location)}`
+    : '';
 
   return (
     <div className="bg-background">
@@ -58,7 +81,7 @@ export default function ListingDetailPage({ params }: { params: { id: string } }
           <div className="lg:col-span-2">
              <Carousel className="w-full rounded-lg overflow-hidden border mb-8">
               <CarouselContent>
-                {property.images.map((img, index) => (
+                {property.photos.map((img: string, index: number) => (
                   <CarouselItem key={index}>
                     <Image
                       src={img}
@@ -66,7 +89,7 @@ export default function ListingDetailPage({ params }: { params: { id: string } }
                       width={800}
                       height={500}
                       className="w-full h-auto object-cover aspect-[16/10]"
-                      data-ai-hint={propertyTypeHints[property.type] || 'room interior'}
+                      data-ai-hint={propertyTypeHints[property.propertyType] || 'room interior'}
                     />
                   </CarouselItem>
                 ))}
@@ -85,7 +108,7 @@ export default function ListingDetailPage({ params }: { params: { id: string } }
                 <CardContent>
                     <div className="flex items-baseline space-x-2">
                          <span className="text-4xl font-bold text-primary">{formatPrice(property.price)}</span>
-                        {property.transaction === 'Rent' && <span className="text-lg text-muted-foreground">/month</span>}
+                        {property.listingType === 'Rent' && <span className="text-lg text-muted-foreground">/month</span>}
                     </div>
                    <div className="grid grid-cols-3 gap-4 text-muted-foreground mt-6 text-center">
                         <div className="flex flex-col items-center justify-center gap-1">
@@ -111,12 +134,12 @@ export default function ListingDetailPage({ params }: { params: { id: string } }
               </CardContent>
             </Card>
             
-            {property.amenities.length > 0 && (
+            {property.amenities && property.amenities.length > 0 && (
                 <Card className="mb-8">
                 <CardHeader><CardTitle>Amenities</CardTitle></CardHeader>
                 <CardContent>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-6 gap-x-4">
-                    {property.amenities.map((amenity) => (
+                    {property.amenities.map((amenity: string) => (
                         <div key={amenity} className="flex items-center gap-3">
                         {amenityIcons[amenity] || <CheckCircle className="h-6 w-6 text-primary" />}
                         <span className="font-medium text-muted-foreground">{amenity}</span>
@@ -131,7 +154,7 @@ export default function ListingDetailPage({ params }: { params: { id: string } }
               <CardHeader><CardTitle>Location</CardTitle></CardHeader>
               <CardContent>
                 <div className="aspect-video rounded-lg overflow-hidden border">
-                  {process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ? (
+                  {mapSrc ? (
                     <iframe
                       width="100%"
                       height="100%"

@@ -1,19 +1,22 @@
+import { Timestamp } from "firebase/firestore";
+
 export type Property = {
   id: string;
   title: string;
-  type: 'Apartment' | 'House' | 'Plot' | 'Shop';
-  transaction: 'Sell' | 'Rent';
+  propertyType: 'Apartment' | 'House' | 'Plot' | 'Shop';
+  listingType: 'Sell' | 'Rent';
   price: number;
   location: string;
   area: number;
   bedrooms: number;
   bathrooms: number;
   description: string;
-  images: string[];
+  photos: string[];
   amenities: string[];
   sellerName: string;
-  sellerPhone: string;
+  sellerPhone?: string;
   featured: boolean;
   tag?: 'Just Listed' | 'Price Drop' | 'Popular';
-  sellerId?: string;
+  sellerId: string;
+  createdAt: Timestamp;
 };
