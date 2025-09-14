@@ -9,16 +9,17 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { Loader2, UploadCloud } from "lucide-react"
+import { Loader2, UploadCloud, ArrowLeft } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { auth, db, storage } from "@/lib/firebase"
 import { useRouter } from "next/navigation"
 import { onAuthStateChanged, User } from "firebase/auth"
 import { addDoc, collection } from "firebase/firestore"
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
+import { Progress } from "@/components/ui/progress"
 
 const MAX_PHOTOS = 10;
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -38,11 +39,20 @@ const formSchema = z.object({
     .refine((files) => Array.from(files).every(file => file.size <= MAX_FILE_SIZE), `Each file must be less than 5MB.`),
 })
 
+type FormValues = z.infer<typeof formSchema>;
+
+const steps = [
+  { id: 'Step 1', name: 'Basic Information', fields: ['title', 'propertyType', 'listingType', 'price', 'area'] },
+  { id: 'Step 2', name: 'Property Details', fields: ['bedrooms', 'bathrooms', 'location', 'description'] },
+  { id: 'Step 3', name: 'Photos', fields: ['photos'] },
+]
+
 export default function PostPropertyPage() {
   const [user, setUser] = useState<User | null>(null);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -64,7 +74,7 @@ export default function PostPropertyPage() {
   }, [router, toast]);
 
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       bedrooms: 0,
@@ -84,26 +94,24 @@ export default function PostPropertyPage() {
     }
     return photoURLs;
   }
-
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!db || !user) {
+  
+  const processForm = async (values: FormValues) => {
+     if (!db || !user) {
         toast({ title: "Error", description: "Could not connect to the database.", variant: "destructive" });
         return;
     }
     setSubmitting(true);
     try {
-        // 1. Upload photos to Firebase Storage
         const imageUrls = await uploadPhotos(values.photos);
 
-        // 2. Save property data to Firestore
         await addDoc(collection(db, "properties"), {
             ...values,
-            photos: imageUrls, // Store URLs instead of FileList
+            photos: imageUrls,
             sellerId: user.uid,
             sellerName: user.displayName,
             sellerEmail: user.email,
             createdAt: new Date(),
-            featured: false, // Default value
+            featured: false,
         });
 
         toast({
@@ -112,7 +120,7 @@ export default function PostPropertyPage() {
         });
         form.reset();
         setPhotoPreviews([]);
-        router.push("/"); // Redirect to homepage after successful submission
+        router.push("/");
 
     } catch (error) {
         console.error("Error listing property:", error);
@@ -142,6 +150,27 @@ export default function PostPropertyPage() {
       form.setValue("photos", files);
     }
   };
+
+  type FieldName = keyof FormValues;
+
+  const next = async () => {
+    const fields = steps[currentStep].fields as FieldName[];
+    const output = await form.trigger(fields, { shouldFocus: true });
+
+    if (!output) return;
+
+    if (currentStep < steps.length - 1) {
+      setCurrentStep(step => step + 1);
+    } else {
+       await form.handleSubmit(processForm)();
+    }
+  };
+
+  const prev = () => {
+    if (currentStep > 0) {
+      setCurrentStep(step => step - 1);
+    }
+  };
   
   if (loading) {
     return <div className="container mx-auto flex justify-center py-12"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>
@@ -150,226 +179,160 @@ export default function PostPropertyPage() {
   return (
     <div className="container mx-auto px-4 md:px-6 py-12 flex justify-center">
       <Card className="w-full max-w-3xl">
-        <Form {...form}>
-          <CardHeader>
-            <CardTitle className="text-3xl">Post a new Property</CardTitle>
-            <CardDescription>Fill in the details below to list your property.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              <FormField
-                  control={form.control}
-                  name="title"
-                  render={({ field }) => (
-                  <FormItem>
-                      <FormLabel>Property Title</FormLabel>
-                      <FormControl>
-                      <Input placeholder="e.g., Beautiful 2BHK Apartment with city view" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                  </FormItem>
-                  )}
-              />
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <FormField
-                  control={form.control}
-                  name="propertyType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Property Type</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a property type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Apartment">Apartment / Flat</SelectItem>
-                          <SelectItem value="House">House / Villa</SelectItem>
-                          <SelectItem value="Plot">Plot</SelectItem>
-                          <SelectItem value="Shop">Commercial Shop</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="listingType"
-                  render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel>Listing For</FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          className="flex items-center gap-6"
-                        >
-                          <FormItem className="flex items-center space-x-2 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="Sell" />
-                            </FormControl>
-                            <FormLabel className="font-normal">Sale</FormLabel>
-                          </FormItem>
-                          <FormItem className="flex items-center space-x-2 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="Rent" />
-                            </FormControl>
-                            <FormLabel className="font-normal">Rent</FormLabel>
-                          </FormItem>
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+        <CardHeader>
+          <CardTitle className="text-3xl">Post a new Property</CardTitle>
+          <CardDescription>Follow the steps to list your property with us.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <div className="space-y-8">
+              <div className="flex items-center gap-4">
+                 <Progress value={((currentStep + 1) / steps.length) * 100} className="w-full" />
+                 <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Step {currentStep + 1} of {steps.length}</span>
               </div>
-
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                 <FormField
-                    control={form.control}
-                    name="price"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Price (in ₹)</FormLabel>
-                        <FormControl>
-                        <Input type="number" placeholder="e.g., 4500000" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                 <FormField
-                    control={form.control}
-                    name="area"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Area (in sq. ft.)</FormLabel>
-                        <FormControl>
-                        <Input type="number" placeholder="e.g., 1200" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-               </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                 <FormField
-                    control={form.control}
-                    name="bedrooms"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Bedrooms</FormLabel>
-                        <FormControl>
-                        <Input type="number" min="0" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                 <FormField
-                    control={form.control}
-                    name="bathrooms"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Bathrooms</FormLabel>
-                        <FormControl>
-                        <Input type="number" min="0" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-               </div>
-
-              <FormField
-                control={form.control}
-                name="location"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Location / Address</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter full address, landmark, or city" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+              
+              <form>
+                {currentStep === 0 && (
+                  <div className="space-y-8">
+                     <FormField
+                        control={form.control}
+                        name="title"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Property Title</FormLabel>
+                            <FormControl>
+                            <Input placeholder="e.g., Beautiful 2BHK Apartment with city view" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <FormField
+                        control={form.control}
+                        name="propertyType"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Property Type</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger><SelectValue placeholder="Select a property type" /></SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="Apartment">Apartment / Flat</SelectItem>
+                                <SelectItem value="House">House / Villa</SelectItem>
+                                <SelectItem value="Plot">Plot</SelectItem>
+                                <SelectItem value="Shop">Commercial Shop</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="listingType"
+                        render={({ field }) => (
+                          <FormItem className="space-y-3">
+                            <FormLabel>Listing For</FormLabel>
+                            <FormControl>
+                              <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex items-center gap-6">
+                                <FormItem className="flex items-center space-x-2 space-y-0">
+                                  <FormControl><RadioGroupItem value="Sell" /></FormControl>
+                                  <FormLabel className="font-normal">Sale</FormLabel>
+                                </FormItem>
+                                <FormItem className="flex items-center space-x-2 space-y-0">
+                                  <FormControl><RadioGroupItem value="Rent" /></FormControl>
+                                  <FormLabel className="font-normal">Rent</FormLabel>
+                                </FormItem>
+                              </RadioGroup>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                       <FormField control={form.control} name="price" render={({ field }) => (
+                          <FormItem><FormLabel>Price (in ₹)</FormLabel><FormControl><Input type="number" placeholder="e.g., 4500000" {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                       <FormField control={form.control} name="area" render={({ field }) => (
+                          <FormItem><FormLabel>Area (in sq. ft.)</FormLabel><FormControl><Input type="number" placeholder="e.g., 1200" {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                     </div>
+                  </div>
                 )}
-              />
 
-               <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Property Description</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Describe your property in detail..." className="min-h-[120px]" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                {currentStep === 1 && (
+                   <div className="space-y-8">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                       <FormField control={form.control} name="bedrooms" render={({ field }) => (
+                          <FormItem><FormLabel>Bedrooms</FormLabel><FormControl><Input type="number" min="0" {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                       <FormField control={form.control} name="bathrooms" render={({ field }) => (
+                          <FormItem><FormLabel>Bathrooms</FormLabel><FormControl><Input type="number" min="0" {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                     </div>
+                     <FormField control={form.control} name="location" render={({ field }) => (
+                        <FormItem><FormLabel>Location / Address</FormLabel><FormControl><Input placeholder="Enter full address, landmark, or city" {...field} /></FormControl><FormMessage /></FormItem>
+                      )} />
+                     <FormField control={form.control} name="description" render={({ field }) => (
+                        <FormItem><FormLabel>Property Description</FormLabel><FormControl><Textarea placeholder="Describe your property in detail..." className="min-h-[120px]" {...field} /></FormControl><FormMessage /></FormItem>
+                      )} />
+                   </div>
                 )}
-              />
-
-              <FormField
-                control={form.control}
-                name="photos"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Property Photos</FormLabel>
-                     <FormControl>
-                        <label htmlFor="photo-upload" className="block border-2 border-dashed border-muted rounded-lg p-6 text-center cursor-pointer hover:border-primary transition-colors">
-                            {photoPreviews.length > 0 ? (
-                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-                                    {photoPreviews.map((src, index) => (
-                                        <div key={index} className="relative aspect-square">
-                                            <Image src={src} alt={`Preview ${index + 1}`} fill className="object-cover rounded-md" />
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <>
-                                    <UploadCloud className="mx-auto h-12 w-12 text-muted-foreground" />
-                                    <p className="mt-2 text-sm text-muted-foreground">
-                                    <span className="font-semibold text-primary">Click to upload</span> or drag and drop
-                                    </p>
-                                    <p className="text-xs text-muted-foreground">Up to {MAX_PHOTOS} photos (PNG, JPG, max 5MB each)</p>
-                                </>
-                            )}
-                            <Input 
-                                id="photo-upload" 
-                                type="file" 
-                                className="hidden"
-                                onChange={handlePhotoChange} 
-                                accept="image/png, image/jpeg" 
-                                multiple 
-                            />
-                        </label>
-                    </FormControl>
-                    <FormDescription>
-                      Good photos attract more buyers. Upload clear, bright pictures.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
+                
+                {currentStep === 2 && (
+                    <FormField
+                      control={form.control}
+                      name="photos"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Property Photos</FormLabel>
+                           <FormControl>
+                              <label htmlFor="photo-upload" className="block border-2 border-dashed border-muted rounded-lg p-6 text-center cursor-pointer hover:border-primary transition-colors">
+                                  {photoPreviews.length > 0 ? (
+                                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                                          {photoPreviews.map((src, index) => (
+                                              <div key={index} className="relative aspect-square">
+                                                  <Image src={src} alt={`Preview ${index + 1}`} fill className="object-cover rounded-md" />
+                                              </div>
+                                          ))}
+                                      </div>
+                                  ) : (
+                                      <>
+                                          <UploadCloud className="mx-auto h-12 w-12 text-muted-foreground" />
+                                          <p className="mt-2 text-sm text-muted-foreground">
+                                          <span className="font-semibold text-primary">Click to upload</span> or drag and drop
+                                          </p>
+                                          <p className="text-xs text-muted-foreground">Up to {MAX_PHOTOS} photos (PNG, JPG, max 5MB each)</p>
+                                      </>
+                                  )}
+                                  <Input id="photo-upload" type="file" className="hidden" onChange={handlePhotoChange} accept="image/png, image/jpeg" multiple />
+                              </label>
+                          </FormControl>
+                          <FormDescription>Good photos attract more buyers. Upload clear, bright pictures.</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                      />
                 )}
-                />
-
-              <Button type="submit" size="lg" className="w-full" disabled={submitting}>
+              </form>
+            </div>
+          </Form>
+        </CardContent>
+         <CardFooter className="flex justify-between">
+            <Button variant="outline" onClick={prev} disabled={currentStep === 0}>
+                <ArrowLeft className="mr-2 h-4 w-4" /> Previous
+            </Button>
+            <Button onClick={next} disabled={submitting}>
                 {submitting ? (
-                    <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Submitting...
-                    </>
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting...</>
                 ) : (
-                   "Submit Property"
+                    currentStep === steps.length - 1 ? 'Submit Property' : 'Next'
                 )}
-              </Button>
-            </form>
-          </CardContent>
-        </Form>
+            </Button>
+        </CardFooter>
       </Card>
     </div>
   )
