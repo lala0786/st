@@ -19,4 +19,5 @@ export type Property = {
   tag?: 'Just Listed' | 'Price Drop' | 'Popular';
   sellerId: string;
   createdAt: Timestamp;
+  views?: number;
 };

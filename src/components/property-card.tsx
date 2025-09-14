@@ -2,10 +2,11 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { BedDouble, Bath, AreaChart, Phone, MessageCircle, Heart } from 'lucide-react';
+import { BedDouble, Bath, AreaChart, Phone, MessageCircle, Heart, Eye } from 'lucide-react';
 import type { Property } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { formatDistanceToNow } from 'date-fns';
 
 interface PropertyCardProps {
   property: Property;
@@ -41,11 +42,13 @@ export function PropertyCard({ property, variant = 'default' }: PropertyCardProp
   }
   
   const photoUrl = property.photos && property.photos.length > 0 ? property.photos[0] : "https://placehold.co/400x250/F0FAFB/A0CED9?text=No+Image";
+  
+  const postedDate = property.createdAt ? formatDistanceToNow(property.createdAt.toDate(), { addSuffix: true }) : 'Recently';
 
 
   return (
     <Card className={cn(
-        "overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 group w-full",
+        "overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 group w-full flex flex-col",
         variant === 'carousel' ? 'min-w-[300px]' : ''
     )}>
       <div className="relative">
@@ -65,15 +68,15 @@ export function PropertyCard({ property, variant = 'default' }: PropertyCardProp
             <span className="sr-only">Save</span>
         </Button>
       </div>
-      <CardContent className="p-4 space-y-3">
+      <CardContent className="p-4 space-y-3 flex-grow flex flex-col justify-between">
         <div>
             <Link href={`/listing/${property.id}`}>
               <h3 className="text-base font-bold truncate group-hover:text-primary">{property.title}</h3>
-              <p className="text-sm text-muted-foreground">{property.location}</p>
+              <p className="text-sm text-muted-foreground truncate">{property.location}</p>
             </Link>
         </div>
         
-        <div className="flex justify-between items-center text-muted-foreground text-sm">
+        <div className="flex justify-between items-center text-muted-foreground text-sm py-2">
           <div className="flex items-center gap-1">
             <BedDouble className="w-4 h-4" />
             <span>{property.bedrooms} Beds</span>
@@ -88,17 +91,26 @@ export function PropertyCard({ property, variant = 'default' }: PropertyCardProp
           </div>
         </div>
 
-        <div className="flex justify-between items-center pt-2">
-            <p className="text-lg font-bold text-foreground">
-                {formatPrice(property.price)} {property.listingType === 'Rent' && <span className="text-sm font-normal text-muted-foreground">/ month</span>}
-            </p>
-            <div className="flex items-center gap-2">
-                <Button size="sm" className="bg-secondary hover:bg-secondary/90">
-                    <Phone className="w-4 h-4"/>
-                </Button>
-                <Button size="sm" variant="outline">
-                    <MessageCircle className="w-4 h-4"/>
-                </Button>
+        <div className="border-t border-border pt-3 space-y-3">
+            <div className="flex justify-between items-center">
+                 <p className="text-lg font-bold text-foreground">
+                    {formatPrice(property.price)} {property.listingType === 'Rent' && <span className="text-sm font-normal text-muted-foreground">/ month</span>}
+                </p>
+                <div className="flex items-center gap-2">
+                    <Button size="sm" className="bg-secondary hover:bg-secondary/90">
+                        <Phone className="w-4 h-4"/>
+                    </Button>
+                    <Button size="sm" variant="outline">
+                        <MessageCircle className="w-4 h-4"/>
+                    </Button>
+                </div>
+            </div>
+            <div className="flex justify-between items-center text-xs text-muted-foreground">
+                <p>Posted {postedDate}</p>
+                <div className="flex items-center gap-1">
+                    <Eye className="w-4 h-4" />
+                    <span>{property.views || 0} views</span>
+                </div>
             </div>
         </div>
 
