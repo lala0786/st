@@ -12,7 +12,7 @@ export type Property = {
   bathrooms: number;
   description: string;
   photos: string[];
-  amenities: string[];
+  amenities?: string[];
   sellerName: string;
   sellerPhone?: string;
   featured: boolean;

@@ -29,7 +29,13 @@ async function getProperties(options: { featured?: boolean; limit?: number } = {
         const querySnapshot = await getDocs(q);
         const properties: Property[] = [];
         querySnapshot.forEach((doc) => {
-            properties.push({ id: doc.id, ...doc.data() } as Property);
+            const data = doc.data();
+            properties.push({ 
+                id: doc.id, 
+                ...data,
+                // Firestore Timestamps need to be converted for Next.js server components
+                createdAt: data.createdAt ? { seconds: data.createdAt.seconds, nanoseconds: data.createdAt.nanoseconds } : null
+            } as Property);
         });
         return properties;
     } catch (error) {
@@ -40,7 +46,7 @@ async function getProperties(options: { featured?: boolean; limit?: number } = {
 
 
 export default async function Home() {
-  const featuredProperties = await getProperties({ featured: true });
+  const featuredProperties = await getProperties({ featured: true, limit: 6 });
   const recentProperties = await getProperties({ limit: 6 });
 
   return (
@@ -55,7 +61,7 @@ export default async function Home() {
                 <Button variant="link" className="text-primary">See All</Button>
             </Link>
             </div>
-            <Carousel opts={{ align: "start", loop: true }} className="w-full">
+            <Carousel opts={{ align: "start", loop: featuredProperties.length > 2 }} className="w-full">
             <CarouselContent>
                 {featuredProperties.map((property) => (
                 <CarouselItem key={property.id} className="md:basis-1/2 lg:basis-1/3">
@@ -75,7 +81,7 @@ export default async function Home() {
       <section>
         <h2 className="text-2xl font-bold mb-4">Fresh Recommendations</h2>
         {recentProperties.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {recentProperties.map((property) => (
                 <PropertyCard key={property.id} property={property} />
             ))}

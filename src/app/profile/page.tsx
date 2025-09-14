@@ -8,8 +8,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
-import { useEffect, useState } from "react";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { useEffect, useState, useCallback } from "react";
+import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import type { Property } from "@/lib/types";
 import { PropertyCard } from "@/components/property-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -39,16 +39,21 @@ export default function ProfilePage() {
     return () => unsubscribe();
   }, [router]);
 
-  const fetchUserListings = async () => {
+  const fetchUserListings = useCallback(async () => {
     if (!user || !db) return;
     setLoadingListings(true);
     try {
       const propertiesRef = collection(db, "properties");
-      const q = query(propertiesRef, where("sellerId", "==", user.uid));
+      const q = query(propertiesRef, where("sellerId", "==", user.uid), orderBy("createdAt", "desc"));
       const querySnapshot = await getDocs(q);
       const userListings: Property[] = [];
       querySnapshot.forEach((doc) => {
-        userListings.push({ id: doc.id, ...doc.data() } as Property);
+        const data = doc.data();
+        userListings.push({ 
+            id: doc.id, 
+            ...data,
+            createdAt: data.createdAt ? { seconds: data.createdAt.seconds, nanoseconds: data.createdAt.nanoseconds } : null
+        } as Property);
       });
       setListings(userListings);
     } catch (error) {
@@ -61,7 +66,7 @@ export default function ProfilePage() {
     } finally {
       setLoadingListings(false);
     }
-  };
+  }, [user, toast]);
 
   const handleLogout = async () => {
     if (!auth) return;
@@ -108,7 +113,7 @@ export default function ProfilePage() {
       <Tabs defaultValue="profile" className="w-full max-w-4xl mx-auto">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="profile">Profile Details</TabsTrigger>
-          <TabsTrigger value="listings" onClick={fetchUserListings}>My Listings ({listings.length})</TabsTrigger>
+          <TabsTrigger value="listings" onClick={fetchUserListings}>My Listings</TabsTrigger>
         </TabsList>
         <TabsContent value="profile">
           <Card>
@@ -117,7 +122,7 @@ export default function ProfilePage() {
                     <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "User"} data-ai-hint="person portrait" />
                     <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
                 </Avatar>
-                <CardTitle className="text-3xl font-bold">{user.displayName || "User"}</CardTitle>
+                <CardTitle className="text-3xl font-headline">{user.displayName || "User"}</CardTitle>
                 <CardDescription>Property Seller / Buyer</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 text-left max-w-md mx-auto">
@@ -152,7 +157,7 @@ export default function ProfilePage() {
                   <Loader2 className="h-12 w-12 animate-spin text-primary" />
                 </div>
               ) : listings.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
                   {listings.map(property => (
                     <PropertyCard key={property.id} property={property} />
                   ))}

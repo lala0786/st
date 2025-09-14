@@ -45,7 +45,19 @@ async function getProperty(id: string): Promise<Property | null> {
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
-            return { id: docSnap.id, ...docSnap.data() } as Property;
+            const data = docSnap.data();
+            // Firestore Timestamps need to be converted for Next.js server components
+            const property = { 
+                id: docSnap.id, 
+                ...data,
+                createdAt: data.createdAt ? { seconds: data.createdAt.seconds, nanoseconds: data.createdAt.nanoseconds } : null
+            } as Property;
+            
+            // Note: View increment logic should be handled in a server action/API route
+            // to avoid race conditions and for better security.
+            // For now, we are just fetching the data.
+
+            return property;
         } else {
             return null;
         }
@@ -100,14 +112,14 @@ export default async function ListingDetailPage({ params }: { params: { id: stri
             
             <Card className="mb-8">
                 <CardHeader>
-                    <CardTitle className="text-3xl font-bold">{property.title}</CardTitle>
+                    <CardTitle className="text-3xl font-headline">{property.title}</CardTitle>
                     <CardDescription className="flex items-center pt-2">
                         <MapPin className="w-4 h-4 mr-1" /> {property.location}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="flex items-baseline space-x-2">
-                         <span className="text-4xl font-bold text-primary">{formatPrice(property.price)}</span>
+                         <span className="text-4xl font-headline text-primary">{formatPrice(property.price)}</span>
                         {property.listingType === 'Rent' && <span className="text-lg text-muted-foreground">/month</span>}
                     </div>
                    <div className="grid grid-cols-3 gap-4 text-muted-foreground mt-6 text-center">
