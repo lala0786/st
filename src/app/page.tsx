@@ -54,7 +54,7 @@ export default async function Home() {
       <PropertySearchForm />
 
       {featuredProperties.length > 0 && (
-        <section className="my-8">
+        <section className="my-12">
             <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold">Featured Properties</h2>
             <Link href="/search">
@@ -62,9 +62,9 @@ export default async function Home() {
             </Link>
             </div>
             <Carousel opts={{ align: "start", loop: featuredProperties.length > 2 }} className="w-full">
-            <CarouselContent>
+            <CarouselContent className="-ml-2">
                 {featuredProperties.map((property) => (
-                <CarouselItem key={property.id} className="md:basis-1/2 lg:basis-1/3">
+                <CarouselItem key={property.id} className="md:basis-1/2 lg:basis-1/3 pl-2">
                     <div className="p-1">
                     <PropertyCard property={property} variant="carousel" />
                     </div>
