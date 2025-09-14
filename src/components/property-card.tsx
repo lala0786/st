@@ -14,6 +14,7 @@ interface PropertyCardProps {
 
 export function PropertyCard({ property, variant = 'default' }: PropertyCardProps) {
   const formatPrice = (price: number) => {
+    if (isNaN(price)) return "N/A";
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR',
@@ -30,11 +31,17 @@ export function PropertyCard({ property, variant = 'default' }: PropertyCardProp
 
   const getBadge = () => {
     if (property.tag) {
-      const variant = property.tag === 'Price Drop' ? 'destructive' : 'accent';
+      let variant: 'destructive' | 'accent' = 'accent';
+      if (property.tag === 'Price Drop') {
+        variant = 'destructive';
+      }
       return <Badge variant={variant} className="absolute top-2 left-2 z-10">{property.tag}</Badge>
     }
     return null;
   }
+  
+  const photoUrl = property.photos && property.photos.length > 0 ? property.photos[0] : "https://placehold.co/400x250/F0FAFB/A0CED9?text=No+Image";
+
 
   return (
     <Card className={cn(
@@ -45,8 +52,8 @@ export function PropertyCard({ property, variant = 'default' }: PropertyCardProp
         {getBadge()}
         <Link href={`/listing/${property.id}`} className="block">
           <Image
-            src={property.photos[0]}
-            alt={property.title}
+            src={photoUrl}
+            alt={property.title || 'Property image'}
             width={400}
             height={250}
             className="w-full h-52 object-cover"

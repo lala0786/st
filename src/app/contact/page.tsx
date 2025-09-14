@@ -43,18 +43,20 @@ export default function ContactPage() {
             <Separator />
              <div className="space-y-4">
               <h3 className="text-xl font-semibold">Direct Contact</h3>
-               <div className="flex items-center gap-4 pl-7">
-                <Phone className="h-5 w-5 text-primary" />
+               <div className="flex items-start gap-4 pl-7">
+                <Phone className="h-5 w-5 text-primary mt-1" />
                 <div>
-                  <p className="font-medium">Alfej Shaikh</p>
-                  <a href="tel:8359069987" className="text-muted-foreground hover:text-primary">8359069987</a>
+                  <p className="font-semibold text-foreground">Alfej Shaikh</p>
+                  <p className="text-sm text-muted-foreground">Lead Developer</p>
+                  <a href="tel:8359069987" className="text-sm text-muted-foreground hover:text-primary">8359069987</a>
                 </div>
               </div>
-              <div className="flex items-center gap-4 pl-7">
-                <Mail className="h-5 w-5 text-primary" />
+              <div className="flex items-start gap-4 pl-7">
+                <Mail className="h-5 w-5 text-primary mt-1" />
                  <div>
-                  <p className="font-medium">Email Us</p>
-                  <a href="mailto:contact@pithampurhomes.com" className="text-muted-foreground hover:text-primary">contact@pithampurhomes.com</a>
+                  <p className="font-semibold text-foreground">Email Us</p>
+                  <p className="text-sm text-muted-foreground">For any inquiries</p>
+                  <a href="mailto:contact@pithampurhomes.com" className="text-sm text-muted-foreground hover:text-primary">contact@pithampurhomes.com</a>
                 </div>
               </div>
             </div>
