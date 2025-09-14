@@ -1,20 +1,20 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Heart } from "lucide-react";
 
 export default function SavedPropertiesPage() {
   return (
-    <div className="container mx-auto px-4 md:px-6 py-12 flex flex-col items-center justify-center text-center">
+    <div className="container mx-auto px-4 md:px-6 py-12 flex flex-col items-center justify-center text-center min-h-[calc(100vh-15rem)]">
         <Card className="w-full max-w-md">
             <CardHeader>
-                <div className="mx-auto bg-primary/10 p-4 rounded-full">
+                <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
                     <Heart className="h-12 w-12 text-primary" />
                 </div>
+                 <CardTitle className="text-2xl font-bold pt-4">Your Saved Properties</CardTitle>
             </CardHeader>
             <CardContent>
-                <CardTitle className="text-2xl font-bold">Saved Properties</CardTitle>
-                <p className="text-muted-foreground mt-2">
-                    This page is under construction. Soon you will be able to see your saved properties here.
-                </p>
+                <CardDescription>
+                    This feature is coming soon! You'll be able to see all the properties you've saved right here.
+                </CardDescription>
             </CardContent>
         </Card>
     </div>
