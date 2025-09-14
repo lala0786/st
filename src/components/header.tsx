@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Home, Bell, User as UserIcon, ChevronDown, Sparkles, LogOut, Wand2 } from "lucide-react";
+import { Home, Bell, User as UserIcon, ChevronDown, Sparkles, LogOut, Wand2, Calculator } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
@@ -58,6 +58,12 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-4">
+           <Link href="/calculator">
+            <Button variant="ghost" size="icon" className="hidden sm:inline-flex">
+              <Calculator className="h-5 w-5 text-primary" />
+              <span className="sr-only">EMI Calculator</span>
+            </Button>
+          </Link>
            <Link href="/interior-designer">
             <Button variant="ghost" size="icon" className="hidden sm:inline-flex">
               <Wand2 className="h-5 w-5 text-primary" />
