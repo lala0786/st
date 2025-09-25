@@ -4,4 +4,26 @@
 runConfig:
   # Increase this value if you'd like to automatically spin up
   # more instances in response to increased traffic.
-  maxInstances: 1
+  maxInstances: 2
+
+# Ensures that all routes are served by the Next.js app.
+# This is required for Next.js's dynamic routing and client-side navigation.
+# It should not be removed or changed.
+# https://firebase.google.com/docs/app-hosting/configure-nextjs
+#
+# If you need to serve static files, you can add them to the `public` directory.
+# All files in the `public` directory will be served at the root of your site.
+# https://nextjs.org/docs/app/building-your-application/optimizing/static-assets
+headers:
+  - source: /_next/static/**
+    headers:
+      - key: Cache-Control
+        value: public, max-age=31536000, immutable
+i18n:
+  # A list of locales that the app supports.
+  # App Hosting automatically redirects users to their preferred locale.
+  # https://firebase.google.com/docs/app-hosting/i18n-support
+  locales:
+    - en-US
+  # The locale to use when the user's preferred locale is not available.
+  defaultLocale: en-US
