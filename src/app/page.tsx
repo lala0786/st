@@ -53,7 +53,7 @@ export default async function Home() {
     <div className="container mx-auto px-4 md:px-6 py-4">
       <PropertySearchForm />
 
-      {featuredProperties.length > 0 && (
+      {featuredProperties && featuredProperties.length > 0 ? (
         <section className="my-12">
             <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold">Featured Properties</h2>
@@ -75,12 +75,12 @@ export default async function Home() {
             <CarouselNext className="hidden sm:flex" />
             </Carousel>
         </section>
-      )}
+      ) : null}
 
 
       <section>
         <h2 className="text-2xl font-bold mb-4">Fresh Recommendations</h2>
-        {recentProperties.length > 0 ? (
+        {recentProperties && recentProperties.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {recentProperties.map((property) => (
                 <PropertyCard key={property.id} property={property} />
