@@ -42,14 +42,15 @@ To run and deploy this application, you **MUST** configure your Firebase project
       projectId: "your-project-id",
       storageBucket: "your-project-id.appspot.com",
       messagingSenderId: "...",
-      appId: "1:...:web:..."
+      appId: "1:...:web:...",
+      measurementId: "G-..."
     };
     ```
 4.  **Copy these keys.**
 
 ### Step 3: Add Keys to Your Project
 
-1.  In your code editor on the left, find the file named `.env.local`. If it doesn't exist, **create a new file** with that exact name.
+1.  In your code editor on the left, find the file named `.env.local`.
 2.  Paste the keys you copied from Firebase into the `.env.local` file. **Make sure to add `NEXT_PUBLIC_` before each key name.** It should look exactly like this:
 
     ```
