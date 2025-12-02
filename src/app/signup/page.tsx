@@ -229,9 +229,7 @@ export default function SignupPage() {
                                 </>
                             )}
                         </form>
-                    )}
-
-                    {otpSent && (
+                    ) : (
                         <form onSubmit={handleOtpSignup} className="grid gap-4">
                              <div className="grid gap-2">
                                 <Label htmlFor="otp">Enter OTP</Label>

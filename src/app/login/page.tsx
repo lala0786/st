@@ -50,14 +50,6 @@ export default function LoginPage() {
     return () => unsubscribe();
   }, [router]);
 
-  const handleLoginSuccess = () => {
-    toast({
-      title: "Login Successful",
-      description: "Welcome back!",
-    });
-    router.push("/profile");
-  }
-
   const handleLoginError = (title: string, description: string) => {
      toast({
         title,
