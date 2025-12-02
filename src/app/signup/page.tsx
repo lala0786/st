@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { auth } from "@/lib/firebase"
+import { auth, areAllKeysPresent } from "@/lib/firebase"
 import { GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, updateProfile, RecaptchaVerifier, signInWithPhoneNumber, onAuthStateChanged, type ConfirmationResult } from "firebase/auth"
 import { useToast } from "@/hooks/use-toast"
 import React, { useState, useEffect } from "react"
@@ -41,7 +41,7 @@ export default function SignupPage() {
       }
     });
 
-    if (!window.recaptchaVerifier) {
+    if (areAllKeysPresent && !window.recaptchaVerifier) {
       window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
           'size': 'invisible',
       });
@@ -49,15 +49,7 @@ export default function SignupPage() {
 
     return () => unsubscribe();
   }, [router]);
-
-  const handleSignupSuccess = (user: any) => {
-    toast({
-      title: "Account Created",
-      description: "You have successfully signed up!",
-    });
-    router.push("/profile");
-  }
-
+  
   const handleSignupError = (title: string, description: string) => {
      toast({
         title,
@@ -66,11 +58,28 @@ export default function SignupPage() {
       });
   }
 
-  const handleGoogleSignup = async () => {
-     if (!auth) {
-      handleSignupError("Configuration Error", "Firebase is not configured.");
-      return;
+  const ensureFirebaseConfigured = () => {
+    if (!areAllKeysPresent) {
+      handleSignupError("Configuration Error", "Firebase API keys are missing. Please check your .env.local file.");
+      return false;
     }
+     if (!auth) {
+      handleSignupError("Configuration Error", "Firebase is not initialized correctly.");
+      return false;
+    }
+    return true;
+  }
+  
+  const handleSignupSuccess = (user: any) => {
+    toast({
+      title: "Account Created",
+      description: "You have successfully signed up!",
+    });
+    router.push("/profile");
+  }
+
+  const handleGoogleSignup = async () => {
+     if (!ensureFirebaseConfigured()) return;
     setLoading(true);
     const provider = new GoogleAuthProvider();
     try {
@@ -86,10 +95,8 @@ export default function SignupPage() {
 
   const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth) {
-        handleSignupError("Configuration Error", "Firebase is not configured.");
-        return;
-    }
+    if (!ensureFirebaseConfigured()) return;
+    
     if (!name) {
       handleSignupError("Name Required", "Please enter your full name.");
       return;
@@ -98,8 +105,6 @@ export default function SignupPage() {
     try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(userCredential.user, { displayName: name });
-        // The onAuthStateChanged listener will handle the redirect.
-        // We call it manually just in case to update the UI faster.
         handleSignupSuccess(userCredential.user);
     } catch(error: any) {
         console.error("Error during email signup: ", error);
@@ -111,10 +116,8 @@ export default function SignupPage() {
 
   const handleSendOtp = async (e: React.FormEvent) => {
       e.preventDefault();
-      if (!auth || !window.recaptchaVerifier) {
-          handleSignupError("Configuration Error", "Firebase is not configured correctly.");
-          return;
-      }
+      if (!ensureFirebaseConfigured() || !window.recaptchaVerifier) return;
+      
       setLoading(true);
       try {
           const formattedPhone = `+91${phone}`;
@@ -125,7 +128,6 @@ export default function SignupPage() {
       } catch (error: any) {
           console.error("Error sending OTP: ", error);
           handleSignupError("OTP Error", error.message || "Could not send OTP. Please check the number.");
-          // Reset reCAPTCHA if it fails
           if (window.grecaptcha && window.recaptchaVerifier) {
             window.recaptchaVerifier.render().then((widgetId: any) => {
                 window.grecaptcha.reset(widgetId);
@@ -138,7 +140,7 @@ export default function SignupPage() {
 
   const handleOtpSignup = async (e: React.FormEvent) => {
       e.preventDefault();
-      if (!confirmationResult || !auth) {
+      if (!ensureFirebaseConfigured() || !confirmationResult) {
           handleSignupError("OTP Error", "Please request an OTP first.");
           return;
       }

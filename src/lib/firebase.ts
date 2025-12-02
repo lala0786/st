@@ -14,13 +14,14 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
+// A check to see if all the necessary keys are present in the environment variables.
 const areAllKeysPresent = 
-    firebaseConfig.apiKey &&
-    firebaseConfig.authDomain &&
-    firebaseConfig.projectId &&
-    firebaseConfig.storageBucket &&
-    firebaseConfig.messagingSenderId &&
-    firebaseConfig.appId;
+    !!firebaseConfig.apiKey &&
+    !!firebaseConfig.authDomain &&
+    !!firebaseConfig.projectId &&
+    !!firebaseConfig.storageBucket &&
+    !!firebaseConfig.messagingSenderId &&
+    !!firebaseConfig.appId;
 
 let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
@@ -28,16 +29,24 @@ let analytics: Promise<Analytics | null> | null = null;
 let db: Firestore | null = null;
 let storage: FirebaseStorage | null = null;
 
+// Initialize Firebase only if all the keys are present.
+// This prevents the app from crashing if the keys are not set.
 if (areAllKeysPresent) {
-    app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-    auth = getAuth(app);
-    db = getFirestore(app);
-    storage = getStorage(app);
-    if (typeof window !== 'undefined') {
-        analytics = isSupported().then(yes => (yes ? getAnalytics(app) : null));
+    try {
+        app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+        auth = getAuth(app);
+        db = getFirestore(app);
+        storage = getStorage(app);
+        if (typeof window !== 'undefined') {
+            analytics = isSupported().then(yes => (yes ? getAnalytics(app as FirebaseApp) : null));
+        }
+    } catch (e) {
+        console.error("Firebase initialization error", e);
     }
 } else {
-    console.warn("Firebase config is missing. Firebase features will be disabled.");
+    // If the keys are not present, we log a warning to the console.
+    // The app will continue to run, but Firebase features will be disabled.
+    console.warn("Firebase configuration keys are missing. Firebase features will be disabled. Please set them in your .env.local file.");
 }
 
-export { app, auth, analytics, db, storage };
+export { app, auth, analytics, db, storage, areAllKeysPresent };

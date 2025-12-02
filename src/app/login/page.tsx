@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
-import { auth } from "@/lib/firebase"
+import { auth, areAllKeysPresent } from "@/lib/firebase"
 import { GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, RecaptchaVerifier, signInWithPhoneNumber, onAuthStateChanged, type ConfirmationResult } from "firebase/auth"
 import { useToast } from "@/hooks/use-toast"
 import React, { useState, useEffect } from "react"
@@ -40,8 +40,8 @@ export default function LoginPage() {
       }
     });
 
-    // Set up reCAPTCHA
-    if (!window.recaptchaVerifier) {
+    // Set up reCAPTCHA only if keys are present and it hasn't been set up
+    if (areAllKeysPresent && !window.recaptchaVerifier) {
       window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
         'size': 'invisible',
       });
@@ -65,12 +65,21 @@ export default function LoginPage() {
         variant: "destructive",
       });
   }
+  
+  const ensureFirebaseConfigured = () => {
+    if (!areAllKeysPresent) {
+      handleLoginError("Configuration Error", "Firebase API keys are missing. Please check your .env.local file.");
+      return false;
+    }
+     if (!auth) {
+      handleLoginError("Configuration Error", "Firebase is not initialized correctly.");
+      return false;
+    }
+    return true;
+  }
 
   const handleGoogleLogin = async () => {
-    if (!auth) {
-      handleLoginError("Configuration Error", "Firebase is not configured. Please add API keys.");
-      return;
-    }
+    if (!ensureFirebaseConfigured()) return;
     setLoading(true);
     const provider = new GoogleAuthProvider();
     try {
@@ -86,10 +95,7 @@ export default function LoginPage() {
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth) {
-       handleLoginError("Configuration Error", "Firebase is not configured.");
-       return;
-    }
+    if (!ensureFirebaseConfigured()) return;
     setLoading(true);
     try {
         await signInWithEmailAndPassword(auth, email, password);
@@ -104,10 +110,8 @@ export default function LoginPage() {
   
   const handleSendOtp = async (e: React.FormEvent) => {
       e.preventDefault();
-      if (!auth || !window.recaptchaVerifier) {
-          handleLoginError("Configuration Error", "Firebase is not configured.");
-          return;
-      }
+      if (!ensureFirebaseConfigured() || !window.recaptchaVerifier) return;
+      
       setLoading(true);
       try {
           const formattedPhone = `+91${phone}`; // Assuming Indian numbers
@@ -131,7 +135,7 @@ export default function LoginPage() {
 
   const handleOtpLogin = async (e: React.FormEvent) => {
       e.preventDefault();
-      if (!confirmationResult) {
+      if (!ensureFirebaseConfigured() || !confirmationResult) {
           handleLoginError("OTP Error", "Please request an OTP first.");
           return;
       }
