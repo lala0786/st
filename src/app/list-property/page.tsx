@@ -80,6 +80,7 @@ export default function PostPropertyPage() {
       bedrooms: 0,
       bathrooms: 0,
     },
+     mode: "onBlur"
   })
 
   const uploadPhotos = async (photos: FileList): Promise<string[]> => {
@@ -160,9 +161,9 @@ export default function PostPropertyPage() {
     if (!output) return;
 
     if (currentStep < steps.length - 1) {
-      setCurrentStep(step => step + 1);
+        setCurrentStep(step => step + 1);
     } else {
-       await form.handleSubmit(processForm)();
+        await processForm(form.getValues());
     }
   };
 
@@ -184,14 +185,14 @@ export default function PostPropertyPage() {
           <CardDescription>Follow the steps to list your property with us.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
             <div className="space-y-8">
               <div className="flex items-center gap-4">
                  <Progress value={((currentStep + 1) / steps.length) * 100} className="w-full" />
                  <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Step {currentStep + 1} of {steps.length}</span>
               </div>
               
-              <form>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(processForm)}>
                 {currentStep === 0 && (
                   <div className="space-y-8">
                      <FormField
@@ -318,14 +319,14 @@ export default function PostPropertyPage() {
                       />
                 )}
               </form>
-            </div>
-          </Form>
+            </Form>
+          </div>
         </CardContent>
          <CardFooter className="flex justify-between">
-            <Button variant="outline" onClick={prev} disabled={currentStep === 0}>
+            <Button type="button" variant="outline" onClick={prev} disabled={currentStep === 0}>
                 <ArrowLeft className="mr-2 h-4 w-4" /> Previous
             </Button>
-            <Button onClick={next} disabled={submitting}>
+            <Button type="button" onClick={next} disabled={submitting}>
                 {submitting ? (
                     <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting...</>
                 ) : (
@@ -337,3 +338,5 @@ export default function PostPropertyPage() {
     </div>
   )
 }
+
+    
