@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { auth } from "@/lib/firebase"
-import { GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, RecaptchaVerifier, signInWithPhoneNumber, type ConfirmationResult } from "firebase/auth"
+import { GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, RecaptchaVerifier, signInWithPhoneNumber, onAuthStateChanged, type ConfirmationResult } from "firebase/auth"
 import { useToast } from "@/hooks/use-toast"
 import React, { useState, useEffect } from "react"
 import { Loader2 } from "lucide-react"
@@ -34,10 +34,21 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!auth) return;
-    window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-      'size': 'invisible',
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        router.push("/profile");
+      }
     });
-  }, []);
+
+    // Set up reCAPTCHA
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        'size': 'invisible',
+      });
+    }
+
+    return () => unsubscribe();
+  }, [router]);
 
   const handleLoginSuccess = () => {
     toast({
@@ -64,7 +75,7 @@ export default function LoginPage() {
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
-      handleLoginSuccess();
+      // The onAuthStateChanged listener will handle the redirect
     } catch (error) {
       console.error("Error during Google login: ", error);
       handleLoginError("Login Failed", "Could not log in with Google. Please try again.");
@@ -82,7 +93,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
         await signInWithEmailAndPassword(auth, email, password);
-        handleLoginSuccess();
+        // The onAuthStateChanged listener will handle the redirect
     } catch (error: any) {
         console.error("Error during email login: ", error);
         handleLoginError("Login Failed", error.message || "Please check your credentials and try again.");
@@ -93,7 +104,7 @@ export default function LoginPage() {
   
   const handleSendOtp = async (e: React.FormEvent) => {
       e.preventDefault();
-      if (!auth) {
+      if (!auth || !window.recaptchaVerifier) {
           handleLoginError("Configuration Error", "Firebase is not configured.");
           return;
       }
@@ -108,11 +119,11 @@ export default function LoginPage() {
           console.error("Error sending OTP: ", error);
           handleLoginError("OTP Error", error.message || "Could not send OTP. Please check the number.");
           // Reset reCAPTCHA
-          window.recaptchaVerifier.render().then((widgetId: any) => {
-            if(auth) {
-              window.grecaptcha.reset(widgetId);
-            }
-          });
+          if (window.grecaptcha && window.recaptchaVerifier) {
+            window.recaptchaVerifier.render().then((widgetId: any) => {
+                window.grecaptcha.reset(widgetId);
+            });
+          }
       } finally {
           setLoading(false);
       }
@@ -127,7 +138,7 @@ export default function LoginPage() {
       setLoading(true);
       try {
           await confirmationResult.confirm(otp);
-          handleLoginSuccess();
+          // The onAuthStateChanged listener will handle the redirect
       } catch (error: any) {
           console.error("Error verifying OTP: ", error);
           handleLoginError("Login Failed", error.message || "Invalid OTP. Please try again.");
@@ -162,38 +173,36 @@ export default function LoginPage() {
                 </span>
               </div>
             </div>
-            <form onSubmit={handleEmailLogin}>
-              <div className="grid gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="m@example.com"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={loading}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <div className="flex items-center">
-                    <Label htmlFor="password">Password</Label>
-                  </div>
-                  <Input 
-                    id="password" 
-                    type="password" 
-                    required 
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    disabled={loading}
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                  Login with Email
-                </Button>
+            <form onSubmit={handleEmailLogin} className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="m@example.com"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={loading}
+                />
               </div>
+              <div className="grid gap-2">
+                <div className="flex items-center">
+                  <Label htmlFor="password">Password</Label>
+                </div>
+                <Input 
+                  id="password" 
+                  type="password" 
+                  required 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={loading}
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Login with Email
+              </Button>
             </form>
             
             <Separator className="my-2" />
@@ -220,25 +229,23 @@ export default function LoginPage() {
                 </div>
               </form>
             ) : (
-               <form onSubmit={handleOtpLogin}>
-                  <div className="grid gap-4">
-                      <div className="grid gap-2">
-                          <Label htmlFor="otp">Enter OTP</Label>
-                          <Input
-                              id="otp"
-                              type="text"
-                              placeholder="6-digit OTP"
-                              required
-                              value={otp}
-                              onChange={(e) => setOtp(e.target.value)}
-                              disabled={loading}
-                          />
-                      </div>
-                      <Button type="submit" variant="secondary" className="w-full" disabled={loading}>
-                           {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                          Login with OTP
-                      </Button>
+               <form onSubmit={handleOtpLogin} className="grid gap-4">
+                  <div className="grid gap-2">
+                      <Label htmlFor="otp">Enter OTP</Label>
+                      <Input
+                          id="otp"
+                          type="text"
+                          placeholder="6-digit OTP"
+                          required
+                          value={otp}
+                          onChange={(e) => setOtp(e.target.value)}
+                          disabled={loading}
+                      />
                   </div>
+                  <Button type="submit" variant="secondary" className="w-full" disabled={loading}>
+                       {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                      Login with OTP
+                  </Button>
               </form>
             )}
 

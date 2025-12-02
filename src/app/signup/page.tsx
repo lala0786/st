@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { auth } from "@/lib/firebase"
-import { GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, updateProfile, RecaptchaVerifier, signInWithPhoneNumber, type ConfirmationResult } from "firebase/auth"
+import { GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, updateProfile, RecaptchaVerifier, signInWithPhoneNumber, onAuthStateChanged, type ConfirmationResult } from "firebase/auth"
 import { useToast } from "@/hooks/use-toast"
 import React, { useState, useEffect } from "react"
 import { Loader2 } from "lucide-react"
@@ -35,15 +35,22 @@ export default function SignupPage() {
 
   useEffect(() => {
     if (!auth) return;
-    // The container must be visible to work. We can hide it with CSS.
-    setTimeout(() => {
-        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-            'size': 'invisible',
-        });
-    }, 100);
-  }, []);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        router.push("/profile");
+      }
+    });
 
-  const handleSignupSuccess = () => {
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+          'size': 'invisible',
+      });
+    }
+
+    return () => unsubscribe();
+  }, [router]);
+
+  const handleSignupSuccess = (user: any) => {
     toast({
       title: "Account Created",
       description: "You have successfully signed up!",
@@ -68,7 +75,7 @@ export default function SignupPage() {
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
-      handleSignupSuccess();
+      // The onAuthStateChanged listener will handle the redirect
     } catch (error) {
       console.error("Error during Google signup: ", error);
       handleSignupError("Signup Failed", "Could not sign up with Google. Please try again.");
@@ -83,11 +90,17 @@ export default function SignupPage() {
         handleSignupError("Configuration Error", "Firebase is not configured.");
         return;
     }
+    if (!name) {
+      handleSignupError("Name Required", "Please enter your full name.");
+      return;
+    }
     setLoading(true);
     try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(userCredential.user, { displayName: name });
-        handleSignupSuccess();
+        // The onAuthStateChanged listener will handle the redirect.
+        // We call it manually just in case to update the UI faster.
+        handleSignupSuccess(userCredential.user);
     } catch(error: any) {
         console.error("Error during email signup: ", error);
         handleSignupError("Signup Failed", error.message || "Please check your details and try again.");
@@ -98,8 +111,8 @@ export default function SignupPage() {
 
   const handleSendOtp = async (e: React.FormEvent) => {
       e.preventDefault();
-      if (!auth) {
-          handleSignupError("Configuration Error", "Firebase is not configured.");
+      if (!auth || !window.recaptchaVerifier) {
+          handleSignupError("Configuration Error", "Firebase is not configured correctly.");
           return;
       }
       setLoading(true);
@@ -113,11 +126,9 @@ export default function SignupPage() {
           console.error("Error sending OTP: ", error);
           handleSignupError("OTP Error", error.message || "Could not send OTP. Please check the number.");
           // Reset reCAPTCHA if it fails
-          if (window.recaptchaVerifier) {
+          if (window.grecaptcha && window.recaptchaVerifier) {
             window.recaptchaVerifier.render().then((widgetId: any) => {
-              if (auth) {
-                  window.grecaptcha.reset(widgetId);
-              }
+                window.grecaptcha.reset(widgetId);
             });
           }
       } finally {
@@ -131,11 +142,15 @@ export default function SignupPage() {
           handleSignupError("OTP Error", "Please request an OTP first.");
           return;
       }
+       if (!name) {
+        handleSignupError("Name Required", "Please enter your full name.");
+        return;
+      }
       setLoading(true);
       try {
           const userCredential = await confirmationResult.confirm(otp);
           await updateProfile(userCredential.user, { displayName: name });
-          handleSignupSuccess();
+          handleSignupSuccess(userCredential.user);
       } catch (error: any) {
           console.error("Error verifying OTP: ", error);
           handleSignupError("Signup Failed", error.message || "Invalid OTP. Please try again.");
@@ -176,7 +191,7 @@ export default function SignupPage() {
                         <Input id="name" placeholder="John Doe" required value={name} onChange={(e) => setName(e.target.value)} disabled={loading} />
                     </div>
 
-                    {!otpSent && (
+                    {!otpSent ? (
                         <form onSubmit={signupMethod === 'email' ? handleEmailSignup : handleSendOtp} className="grid gap-4">
                              <div className="grid grid-cols-2 gap-2 text-center text-sm">
                                 <button type="button" onClick={() => setSignupMethod('email')} className={`p-2 rounded-md ${signupMethod === 'email' ? 'bg-muted font-semibold' : ''}`}>Using Email</button>
@@ -193,7 +208,7 @@ export default function SignupPage() {
                                         <Label htmlFor="password">Password</Label>
                                         <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} disabled={loading}/>
                                     </div>
-                                    <Button type="submit" className="w-full" disabled={loading}>
+                                    <Button type="submit" className="w-full" disabled={loading || !name || !email || !password}>
                                         {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                                         Create account with Email
                                     </Button>
@@ -204,7 +219,7 @@ export default function SignupPage() {
                                         <Label htmlFor="phone">Phone Number</Label>
                                         <div className="flex gap-2">
                                             <Input id="phone" type="tel" placeholder="10-digit mobile number" required value={phone} onChange={(e) => setPhone(e.target.value)} disabled={loading}/>
-                                            <Button type="submit" disabled={loading || !phone}>
+                                            <Button type="submit" disabled={loading || !name || !phone}>
                                                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send OTP"}
                                             </Button>
                                         </div>
@@ -220,7 +235,7 @@ export default function SignupPage() {
                                 <Label htmlFor="otp">Enter OTP</Label>
                                 <Input id="otp" type="text" placeholder="6-digit OTP" required value={otp} onChange={(e) => setOtp(e.target.value)} disabled={loading} />
                             </div>
-                            <Button type="submit" className="w-full" disabled={loading}>
+                            <Button type="submit" className="w-full" disabled={loading || !otp}>
                                 {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                                 Create account with OTP
                             </Button>
