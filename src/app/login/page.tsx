@@ -7,8 +7,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { auth } from "@/lib/firebase"
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth"
+import { GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, RecaptchaVerifier, signInWithPhoneNumber, type ConfirmationResult } from "firebase/auth"
 import { useToast } from "@/hooks/use-toast"
+import React, { useState, useEffect } from "react"
+import { Loader2 } from "lucide-react"
 
 function GoogleIcon(props: React.ComponentProps<"svg">) {
   return (
@@ -22,33 +24,117 @@ function GoogleIcon(props: React.ComponentProps<"svg">) {
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [phone, setPhone] = useState('');
+  const [otp, setOtp] = useState('');
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+
+  useEffect(() => {
+    if (!auth) return;
+    window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+      'size': 'invisible',
+    });
+  }, []);
+
+  const handleLoginSuccess = () => {
+    toast({
+      title: "Login Successful",
+      description: "Welcome back!",
+    });
+    router.push("/profile");
+  }
+
+  const handleLoginError = (title: string, description: string) => {
+     toast({
+        title,
+        description,
+        variant: "destructive",
+      });
+  }
 
   const handleGoogleLogin = async () => {
     if (!auth) {
-      toast({
-        title: "Configuration Error",
-        description: "Firebase is not configured. Please add API keys.",
-        variant: "destructive",
-      });
+      handleLoginError("Configuration Error", "Firebase is not configured. Please add API keys.");
       return;
     }
+    setLoading(true);
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
-      toast({
-        title: "Login Successful",
-        description: "Welcome back!",
-      });
-      router.push("/profile");
+      handleLoginSuccess();
     } catch (error) {
       console.error("Error during Google login: ", error);
-      toast({
-        title: "Login Failed",
-        description: "Could not log in with Google. Please try again.",
-        variant: "destructive",
-      });
+      handleLoginError("Login Failed", "Could not log in with Google. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
+
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!auth) {
+       handleLoginError("Configuration Error", "Firebase is not configured.");
+       return;
+    }
+    setLoading(true);
+    try {
+        await signInWithEmailAndPassword(auth, email, password);
+        handleLoginSuccess();
+    } catch (error: any) {
+        console.error("Error during email login: ", error);
+        handleLoginError("Login Failed", error.message || "Please check your credentials and try again.");
+    } finally {
+        setLoading(false);
+    }
+  }
+  
+  const handleSendOtp = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!auth) {
+          handleLoginError("Configuration Error", "Firebase is not configured.");
+          return;
+      }
+      setLoading(true);
+      try {
+          const formattedPhone = `+91${phone}`; // Assuming Indian numbers
+          const confirmation = await signInWithPhoneNumber(auth, formattedPhone, window.recaptchaVerifier);
+          setConfirmationResult(confirmation);
+          setOtpSent(true);
+          toast({ title: "OTP Sent", description: `An OTP has been sent to ${formattedPhone}` });
+      } catch (error: any) {
+          console.error("Error sending OTP: ", error);
+          handleLoginError("OTP Error", error.message || "Could not send OTP. Please check the number.");
+          // Reset reCAPTCHA
+          window.recaptchaVerifier.render().then((widgetId: any) => {
+            if(auth) {
+              window.grecaptcha.reset(widgetId);
+            }
+          });
+      } finally {
+          setLoading(false);
+      }
+  }
+
+  const handleOtpLogin = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!confirmationResult) {
+          handleLoginError("OTP Error", "Please request an OTP first.");
+          return;
+      }
+      setLoading(true);
+      try {
+          await confirmationResult.confirm(otp);
+          handleLoginSuccess();
+      } catch (error: any) {
+          console.error("Error verifying OTP: ", error);
+          handleLoginError("Login Failed", error.message || "Invalid OTP. Please try again.");
+      } finally {
+          setLoading(false);
+      }
+  }
 
   return (
     <div className="flex items-center justify-center min-h-[calc(100vh-15rem)] bg-background py-12 px-4">
@@ -61,8 +147,8 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4">
-             <Button variant="outline" className="w-full" type="button" onClick={handleGoogleLogin}>
-              <GoogleIcon className="mr-2 h-4 w-4" />
+             <Button variant="outline" className="w-full" type="button" onClick={handleGoogleLogin} disabled={loading}>
+              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2 h-4 w-4" />}
               Login with Google
             </Button>
             
@@ -76,7 +162,7 @@ export default function LoginPage() {
                 </span>
               </div>
             </div>
-            <form onSubmit={(e) => e.preventDefault()}>
+            <form onSubmit={handleEmailLogin}>
               <div className="grid gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="email">Email</Label>
@@ -85,45 +171,79 @@ export default function LoginPage() {
                     type="email"
                     placeholder="m@example.com"
                     required
-                    disabled
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={loading}
                   />
                 </div>
                 <div className="grid gap-2">
                   <div className="flex items-center">
                     <Label htmlFor="password">Password</Label>
                   </div>
-                  <Input id="password" type="password" required disabled />
+                  <Input 
+                    id="password" 
+                    type="password" 
+                    required 
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={loading}
+                  />
                 </div>
-                <Button type="submit" className="w-full" disabled>
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                   Login with Email
                 </Button>
               </div>
             </form>
             
             <Separator className="my-2" />
-            <form onSubmit={(e) => e.preventDefault()}>
-              <div className="grid gap-4">
-                  <div className="grid gap-2">
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <div className="flex gap-2">
+            
+            {!otpSent ? (
+              <form onSubmit={handleSendOtp}>
+                <div className="grid gap-2">
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <div className="flex gap-2">
+                        <Input
+                            id="phone"
+                            type="tel"
+                            placeholder="10-digit mobile number"
+                            required
+                            className="flex-grow"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            disabled={loading}
+                        />
+                        <Button type="submit" disabled={loading || !phone}>
+                            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send OTP"}
+                        </Button>
+                    </div>
+                </div>
+              </form>
+            ) : (
+               <form onSubmit={handleOtpLogin}>
+                  <div className="grid gap-4">
+                      <div className="grid gap-2">
+                          <Label htmlFor="otp">Enter OTP</Label>
                           <Input
-                              id="phone"
-                              type="tel"
-                              placeholder="10-digit mobile number"
+                              id="otp"
+                              type="text"
+                              placeholder="6-digit OTP"
                               required
-                              className="flex-grow"
-                              disabled
+                              value={otp}
+                              onChange={(e) => setOtp(e.target.value)}
+                              disabled={loading}
                           />
-                          <Button type="submit" disabled>Send OTP</Button>
                       </div>
+                      <Button type="submit" variant="secondary" className="w-full" disabled={loading}>
+                           {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                          Login with OTP
+                      </Button>
                   </div>
-                  <Button type="submit" variant="secondary" className="w-full" disabled>
-                      Login with OTP
-                  </Button>
-              </div>
-            </form>
+              </form>
+            )}
 
           </div>
+          <div id="recaptcha-container"></div>
           <div className="mt-4 text-center text-sm">
             Don&apos;t have an account?{" "}
             <Link href="/signup" className="underline hover:text-primary">

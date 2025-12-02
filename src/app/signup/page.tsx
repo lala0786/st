@@ -6,8 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { auth } from "@/lib/firebase"
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth"
+import { GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, updateProfile, RecaptchaVerifier, signInWithPhoneNumber, type ConfirmationResult } from "firebase/auth"
 import { useToast } from "@/hooks/use-toast"
+import React, { useState, useEffect } from "react"
+import { Loader2 } from "lucide-react"
 
 function GoogleIcon(props: React.ComponentProps<"svg">) {
   return (
@@ -21,33 +23,126 @@ function GoogleIcon(props: React.ComponentProps<"svg">) {
 export default function SignupPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [phone, setPhone] = useState('');
+  const [otp, setOtp] = useState('');
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [signupMethod, setSignupMethod] = useState<'email' | 'phone'>('email');
+
+  useEffect(() => {
+    if (!auth) return;
+    // The container must be visible to work. We can hide it with CSS.
+    setTimeout(() => {
+        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+            'size': 'invisible',
+        });
+    }, 100);
+  }, []);
+
+  const handleSignupSuccess = () => {
+    toast({
+      title: "Account Created",
+      description: "You have successfully signed up!",
+    });
+    router.push("/profile");
+  }
+
+  const handleSignupError = (title: string, description: string) => {
+     toast({
+        title,
+        description,
+        variant: "destructive",
+      });
+  }
 
   const handleGoogleSignup = async () => {
      if (!auth) {
-      toast({
-        title: "Configuration Error",
-        description: "Firebase is not configured. Please add API keys.",
-        variant: "destructive",
-      });
+      handleSignupError("Configuration Error", "Firebase is not configured.");
       return;
     }
+    setLoading(true);
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
-      toast({
-        title: "Account Created",
-        description: "You have successfully signed up!",
-      });
-      router.push("/profile");
+      handleSignupSuccess();
     } catch (error) {
       console.error("Error during Google signup: ", error);
-      toast({
-        title: "Signup Failed",
-        description: "Could not sign up with Google. Please try again.",
-        variant: "destructive",
-      });
+      handleSignupError("Signup Failed", "Could not sign up with Google. Please try again.");
+    } finally {
+        setLoading(false);
     }
   };
+
+  const handleEmailSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!auth) {
+        handleSignupError("Configuration Error", "Firebase is not configured.");
+        return;
+    }
+    setLoading(true);
+    try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        await updateProfile(userCredential.user, { displayName: name });
+        handleSignupSuccess();
+    } catch(error: any) {
+        console.error("Error during email signup: ", error);
+        handleSignupError("Signup Failed", error.message || "Please check your details and try again.");
+    } finally {
+        setLoading(false);
+    }
+  }
+
+  const handleSendOtp = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!auth) {
+          handleSignupError("Configuration Error", "Firebase is not configured.");
+          return;
+      }
+      setLoading(true);
+      try {
+          const formattedPhone = `+91${phone}`;
+          const confirmation = await signInWithPhoneNumber(auth, formattedPhone, window.recaptchaVerifier);
+          setConfirmationResult(confirmation);
+          setOtpSent(true);
+          toast({ title: "OTP Sent", description: `An OTP has been sent to ${formattedPhone}` });
+      } catch (error: any) {
+          console.error("Error sending OTP: ", error);
+          handleSignupError("OTP Error", error.message || "Could not send OTP. Please check the number.");
+          // Reset reCAPTCHA if it fails
+          if (window.recaptchaVerifier) {
+            window.recaptchaVerifier.render().then((widgetId: any) => {
+              if (auth) {
+                  window.grecaptcha.reset(widgetId);
+              }
+            });
+          }
+      } finally {
+          setLoading(false);
+      }
+  }
+
+  const handleOtpSignup = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!confirmationResult || !auth) {
+          handleSignupError("OTP Error", "Please request an OTP first.");
+          return;
+      }
+      setLoading(true);
+      try {
+          const userCredential = await confirmationResult.confirm(otp);
+          await updateProfile(userCredential.user, { displayName: name });
+          handleSignupSuccess();
+      } catch (error: any) {
+          console.error("Error verifying OTP: ", error);
+          handleSignupError("Signup Failed", error.message || "Invalid OTP. Please try again.");
+      } finally {
+          setLoading(false);
+      }
+  }
 
   return (
     <div className="flex items-center justify-center min-h-[calc(100vh-15rem)] bg-background py-12 px-4">
@@ -59,51 +154,82 @@ export default function SignupPage() {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <form onSubmit={(e) => e.preventDefault()}>
-                    <div className="grid gap-4">
-                        <Button variant="outline" className="w-full" type="button" onClick={handleGoogleSignup}>
-                            <GoogleIcon className="mr-2 h-4 w-4" />
-                            Sign up with Google
-                        </Button>
-                        
-                        <div className="relative my-2">
-                        <div className="absolute inset-0 flex items-center">
-                            <span className="w-full border-t" />
-                        </div>
-                        <div className="relative flex justify-center text-xs uppercase">
-                            <span className="bg-background px-2 text-muted-foreground">
-                            Or create an account with email
-                            </span>
-                        </div>
-                        </div>
-
-                        <div className="grid gap-2">
-                            <Label htmlFor="name">Full Name</Label>
-                            <Input id="name" placeholder="John Doe" required disabled />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="email">Email</Label>
-                            <Input
-                            id="email"
-                            type="email"
-                            placeholder="m@example.com"
-                            required
-                            disabled
-                            />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="phone">Phone Number</Label>
-                            <Input id="phone" type="tel" placeholder="9876543210" required disabled />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="password">Password</Label>
-                            <Input id="password" type="password" required disabled/>
-                        </div>
-                        <Button type="submit" className="w-full" disabled>
-                            Create an account
-                        </Button>
+                <div className="grid gap-4">
+                    <Button variant="outline" className="w-full" type="button" onClick={handleGoogleSignup} disabled={loading}>
+                        {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2 h-4 w-4" />}
+                        Sign up with Google
+                    </Button>
+                    
+                    <div className="relative my-2">
+                    <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t" />
                     </div>
-                </form>
+                    <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-background px-2 text-muted-foreground">
+                        Or create an account
+                        </span>
+                    </div>
+                    </div>
+                    
+                    <div className="grid gap-2">
+                        <Label htmlFor="name">Full Name</Label>
+                        <Input id="name" placeholder="John Doe" required value={name} onChange={(e) => setName(e.target.value)} disabled={loading} />
+                    </div>
+
+                    {!otpSent && (
+                        <form onSubmit={signupMethod === 'email' ? handleEmailSignup : handleSendOtp} className="grid gap-4">
+                             <div className="grid grid-cols-2 gap-2 text-center text-sm">
+                                <button type="button" onClick={() => setSignupMethod('email')} className={`p-2 rounded-md ${signupMethod === 'email' ? 'bg-muted font-semibold' : ''}`}>Using Email</button>
+                                <button type="button" onClick={() => setSignupMethod('phone')} className={`p-2 rounded-md ${signupMethod === 'phone' ? 'bg-muted font-semibold' : ''}`}>Using Phone</button>
+                            </div>
+                            
+                            {signupMethod === 'email' ? (
+                                <>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="email">Email</Label>
+                                        <Input id="email" type="email" placeholder="m@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} disabled={loading}/>
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="password">Password</Label>
+                                        <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} disabled={loading}/>
+                                    </div>
+                                    <Button type="submit" className="w-full" disabled={loading}>
+                                        {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                        Create account with Email
+                                    </Button>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="phone">Phone Number</Label>
+                                        <div className="flex gap-2">
+                                            <Input id="phone" type="tel" placeholder="10-digit mobile number" required value={phone} onChange={(e) => setPhone(e.target.value)} disabled={loading}/>
+                                            <Button type="submit" disabled={loading || !phone}>
+                                                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send OTP"}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </form>
+                    )}
+
+                    {otpSent && (
+                        <form onSubmit={handleOtpSignup} className="grid gap-4">
+                             <div className="grid gap-2">
+                                <Label htmlFor="otp">Enter OTP</Label>
+                                <Input id="otp" type="text" placeholder="6-digit OTP" required value={otp} onChange={(e) => setOtp(e.target.value)} disabled={loading} />
+                            </div>
+                            <Button type="submit" className="w-full" disabled={loading}>
+                                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                Create account with OTP
+                            </Button>
+                        </form>
+                    )}
+                </div>
+
+                <div id="recaptcha-container" className="my-4"></div>
+
                 <div className="mt-4 text-center text-sm">
                 Already have an account?{" "}
                 <Link href="/login" className="underline hover:text-primary">
