@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Home, Bell, User as UserIcon, ChevronDown, Sparkles, LogOut, Wand2, Calculator } from "lucide-react";
+import { Home, Bell, User as UserIcon, ChevronDown, Sparkles, LogOut, Wand2, Calculator, Handshake } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
@@ -50,7 +50,7 @@ export function Header() {
           <span className="hidden sm:inline">Pithampur Homes</span>
         </Link>
         
-        <nav className="hidden md:flex items-center gap-2">
+        <nav className="hidden md:flex items-center gap-1">
             <Button variant="ghost" asChild>
                 <Link href="/dream-home">Dream Home AI</Link>
             </Button>
@@ -59,6 +59,9 @@ export function Header() {
             </Button>
              <Button variant="ghost" asChild>
                 <Link href="/property-qa">Property Q&A</Link>
+            </Button>
+             <Button variant="ghost" asChild>
+                <Link href="/partners">Broker-Partner</Link>
             </Button>
             <Button variant="ghost" asChild>
                 <Link href="/calculator">EMI Calculator</Link>

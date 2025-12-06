@@ -2,14 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Search, PlusSquare, Heart, User, Wand2, Calculator } from 'lucide-react';
+import { Home, Search, PlusSquare, Heart, User, Handshake } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/search', label: 'Search', icon: Search },
   { href: '/list-property', label: 'Post', icon: PlusSquare },
-  { href: '/saved', label: 'Saved', icon: Heart },
+  { href: '/partners', label: 'Partners', icon: Handshake },
   { href: '/profile', label: 'Profile', icon: User },
 ];
 
