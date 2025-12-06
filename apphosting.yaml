@@ -19,11 +19,3 @@ headers:
     headers:
       - key: Cache-Control
         value: public, max-age=31536000, immutable
-i18n:
-  # A list of locales that the app supports.
-  # App Hosting automatically redirects users to their preferred locale.
-  # https://firebase.google.com/docs/app-hosting/i18n-support
-  locales:
-    - en-US
-  # The locale to use when the user's preferred locale is not available.
-  defaultLocale: en-US

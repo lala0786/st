@@ -163,8 +163,10 @@ export default function PropertyQAPage() {
                     </Alert>
                  </div>
               ) : (
-                <div className="text-center text-muted-foreground">
-                    <p>Upload a photo and ask a question to get started.</p>
+                <div className="text-center text-muted-foreground p-8 bg-muted/50 rounded-lg">
+                    <HelpCircle className="mx-auto h-12 w-12 mb-4" />
+                    <p className="font-semibold">Waiting for your question</p>
+                    <p className="text-sm">Upload a photo and ask a question to get started.</p>
                 </div>
               )}
            </CardContent>

@@ -81,7 +81,7 @@ To run and deploy this application, you **MUST** configure your Firebase project
 
 ## ☁️ Deploying to Firebase App Hosting (Go Live for Free!)
 
-Once your app is configured, you can deploy it with a few commands from your computer's terminal.
+Once your app is configured, you can deploy it with a few commands from your computer's terminal. This process uses **Firebase App Hosting**, which is designed for modern web apps and is very easy to use.
 
 1.  **Install Dependencies:**
     In your project folder, run:
@@ -100,7 +100,15 @@ Once your app is configured, you can deploy it with a few commands from your com
     firebase login
     ```
 
-4.  **Deploy!**
+4.  **Initialize Firebase for this project:**
+    Run this command in your project folder:
+    ```bash
+    firebase init
+    ```
+    *   When prompted, choose **App Hosting**.
+    *   Follow the on-screen instructions to select your Firebase project and set up the deployment backend.
+
+5.  **Deploy!**
     Run the final command:
     ```bash
     firebase deploy
