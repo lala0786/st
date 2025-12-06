@@ -16,8 +16,8 @@ interface PropertyCardProps {
   variant?: 'default' | 'carousel';
 }
 
-const shimmer = (w: number, h: number) => `
-<svg width="${w}" height="${h}" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+const shimmer = `
+<svg width="400" height="250" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
   <defs>
     <linearGradient id="g">
       <stop stop-color="#f0f0f0" offset="20%" />
@@ -25,9 +25,9 @@ const shimmer = (w: number, h: number) => `
       <stop stop-color="#f0f0f0" offset="70%" />
     </linearGradient>
   </defs>
-  <rect width="${w}" height="${h}" fill="#f0f0f0" />
-  <rect id="r" width="${w}" height="${h}" fill="url(#g)" />
-  <animate xlink:href="#r" attributeName="x" from="-${w}" to="${w}" dur="1s" repeatCount="indefinite"  />
+  <rect width="400" height="250" fill="#f0f0f0" />
+  <rect id="r" width="400" height="250" fill="url(#g)" />
+  <animate xlink:href="#r" attributeName="x" from="-400" to="400" dur="1s" repeatCount="indefinite"  />
 </svg>`;
 
 const toBase64 = (str: string) =>
@@ -92,7 +92,7 @@ export function PropertyCard({ property, variant = 'default' }: PropertyCardProp
             height={250}
             className="w-full h-52 object-cover bg-muted"
             data-ai-hint={propertyTypeHints[property.propertyType || 'House'] || 'building exterior'}
-            placeholder={`data:image/svg+xml;base64,${toBase64(shimmer(400, 250))}`}
+            placeholder={`data:image/svg+xml;base64,${toBase64(shimmer)}`}
           />
         </Link>
         <Button 

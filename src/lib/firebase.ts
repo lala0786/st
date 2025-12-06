@@ -46,7 +46,9 @@ if (areAllKeysPresent) {
 } else {
     // If the keys are not present, we log a warning to the console.
     // The app will continue to run, but Firebase features will be disabled.
-    console.warn("Firebase configuration keys are missing. Firebase features will be disabled. Please set them in your .env.local file.");
+    if (typeof window !== 'undefined') {
+      console.warn("Firebase configuration keys are missing. Firebase features will be disabled. Please set them in your .env.local file.");
+    }
 }
 
 export { app, auth, analytics, db, storage, areAllKeysPresent };

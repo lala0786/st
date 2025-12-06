@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, increment } from 'firebase/firestore';
 import type { Property } from '@/lib/types';
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -53,6 +53,12 @@ export default function ListingDetailPage({ params }: { params: { id: string } }
         }
         try {
             const docRef = doc(db, "properties", id);
+            
+            // Increment view count
+            await updateDoc(docRef, {
+                views: increment(1)
+            });
+
             const docSnap = await getDoc(docRef);
 
             if (docSnap.exists()) {
