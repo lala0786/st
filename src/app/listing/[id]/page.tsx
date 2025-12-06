@@ -1,16 +1,19 @@
+"use client";
+
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { 
     BedDouble, Bath, AreaChart, MapPin, Phone, MessageCircle, CheckCircle, Car, Zap, Shield, Droplets, Flower2, Home, User
 } from 'lucide-react';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import type { Property } from '@/lib/types';
+import Link from 'next/link';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const formatPrice = (price: number) => {
   return new Intl.NumberFormat('en-IN', {
@@ -36,40 +39,68 @@ const amenityIcons: { [key: string]: React.ReactNode } = {
     'Clubhouse': <Home className="h-6 w-6 text-primary" />,
   };
 
-async function getProperty(id: string): Promise<Property | null> {
-    if (!db) {
-        return null;
-    }
-    try {
-        const docRef = doc(db, "properties", id);
-        const docSnap = await getDoc(docRef);
 
-        if (docSnap.exists()) {
-            const data = docSnap.data();
-            // Firestore Timestamps need to be converted for Next.js server components
-            const property = { 
-                id: docSnap.id, 
-                ...data,
-                createdAt: data.createdAt ? { seconds: data.createdAt.seconds, nanoseconds: data.createdAt.nanoseconds } : null
-            } as Property;
-            
-            // Note: View increment logic should be handled in a server action/API route
-            // to avoid race conditions and for better security.
-            // For now, we are just fetching the data.
-
-            return property;
-        } else {
-            return null;
+export default function ListingDetailPage({ params }: { params: { id: string } }) {
+  const [property, setProperty] = useState<Property | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  
+  useEffect(() => {
+    async function getProperty(id: string) {
+        if (!db) {
+            setLoading(false);
+            return;
         }
-    } catch (error) {
-        console.error("Error fetching property: ", error);
-        return null;
+        try {
+            const docRef = doc(db, "properties", id);
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                const fetchedProperty = { 
+                    id: docSnap.id, 
+                    ...data,
+                    createdAt: data.createdAt ? { seconds: data.createdAt.seconds, nanoseconds: data.createdAt.nanoseconds } : null
+                } as Property;
+                setProperty(fetchedProperty);
+                if (fetchedProperty.photos && fetchedProperty.photos.length > 0) {
+                    setSelectedImage(fetchedProperty.photos[0]);
+                }
+            } else {
+                setProperty(null);
+            }
+        } catch (error) {
+            console.error("Error fetching property: ", error);
+            setProperty(null);
+        } finally {
+            setLoading(false);
+        }
     }
-}
+    
+    getProperty(params.id);
+
+  }, [params.id]);
 
 
-export default async function ListingDetailPage({ params }: { params: { id: string } }) {
-  const property = await getProperty(params.id);
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 md:px-6 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-8">
+            <Skeleton className="w-full aspect-[16/10] rounded-lg" />
+            <div className="grid grid-cols-5 gap-2">
+              {[...Array(5)].map((_, i) => <Skeleton key={i} className="w-full aspect-square rounded-md" />)}
+            </div>
+            <Skeleton className="w-full h-48 rounded-lg" />
+            <Skeleton className="w-full h-32 rounded-lg" />
+          </div>
+          <div className="lg:col-span-1">
+             <Skeleton className="w-full h-64 rounded-lg" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!property) {
     notFound();
@@ -81,6 +112,8 @@ export default async function ListingDetailPage({ params }: { params: { id: stri
     Plot: 'empty plot',
     Shop: 'shop interior',
   }
+  
+  const sellerPhone = property.sellerPhone || '+919999999999';
 
   const mapSrc = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
     ? `https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&q=${encodeURIComponent(property.location)}`
@@ -91,24 +124,35 @@ export default async function ListingDetailPage({ params }: { params: { id: stri
       <div className="container mx-auto px-4 md:px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
-             <Carousel className="w-full rounded-lg overflow-hidden border mb-8">
-              <CarouselContent>
-                {property.photos.map((img: string, index: number) => (
-                  <CarouselItem key={index}>
-                    <Image
-                      src={img}
-                      alt={`${property.title} image ${index + 1}`}
-                      width={800}
-                      height={500}
-                      className="w-full h-auto object-cover aspect-[16/10]"
-                      data-ai-hint={propertyTypeHints[property.propertyType] || 'room interior'}
-                    />
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-              <CarouselPrevious className="left-4" />
-              <CarouselNext className="right-4" />
-            </Carousel>
+            
+            <div className="mb-8">
+                <div className="aspect-[16/10] w-full rounded-lg overflow-hidden border mb-2">
+                    {selectedImage && (
+                        <Image
+                            src={selectedImage}
+                            alt={`${property.title} main image`}
+                            width={800}
+                            height={500}
+                            className="w-full h-full object-cover"
+                            data-ai-hint={propertyTypeHints[property.propertyType] || 'room interior'}
+                            priority
+                        />
+                    )}
+                </div>
+                 <div className="grid grid-cols-5 gap-2">
+                    {property.photos.map((img: string, index: number) => (
+                      <button key={index} onClick={() => setSelectedImage(img)} className={`aspect-square rounded-md overflow-hidden border-2 ${selectedImage === img ? 'border-primary' : 'border-transparent'}`}>
+                        <Image
+                          src={img}
+                          alt={`${property.title} thumbnail ${index + 1}`}
+                          width={150}
+                          height={150}
+                          className="w-full h-full object-cover"
+                        />
+                      </button>
+                    ))}
+                 </div>
+            </div>
             
             <Card className="mb-8">
                 <CardHeader>
@@ -122,7 +166,8 @@ export default async function ListingDetailPage({ params }: { params: { id: stri
                          <span className="text-4xl font-headline text-primary">{formatPrice(property.price)}</span>
                         {property.listingType === 'Rent' && <span className="text-lg text-muted-foreground">/month</span>}
                     </div>
-                   <div className="grid grid-cols-3 gap-4 text-muted-foreground mt-6 text-center">
+                   <Separator className="my-6" />
+                   <div className="grid grid-cols-3 gap-4 text-muted-foreground text-center">
                         <div className="flex flex-col items-center justify-center gap-1">
                             <BedDouble className="w-7 h-7 text-primary"/>
                             <span className="font-semibold">{property.bedrooms} Beds</span>
@@ -191,13 +236,17 @@ export default async function ListingDetailPage({ params }: { params: { id: stri
                 <CardTitle className="text-center">Contact Seller</CardTitle>
               </CardHeader>
               <CardContent className="grid gap-4">
-                <Button size="lg" className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold text-lg">
-                  <Phone className="mr-2 h-5 w-5" />
-                  Call Owner
+                <Button asChild size="lg" className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold text-lg">
+                  <Link href={`tel:${sellerPhone}`}>
+                    <Phone className="mr-2 h-5 w-5" />
+                    Call Owner
+                  </Link>
                 </Button>
-                <Button size="lg" variant="outline" className="w-full font-bold text-lg">
-                  <MessageCircle className="mr-2 h-5 w-5" />
-                  WhatsApp
+                <Button asChild size="lg" variant="outline" className="w-full font-bold text-lg">
+                  <Link href={`https://wa.me/${sellerPhone}`} target="_blank">
+                    <MessageCircle className="mr-2 h-5 w-5" />
+                    WhatsApp
+                  </Link>
                 </Button>
                  <Separator className="my-2"/>
                  <p className="text-sm text-muted-foreground text-center">

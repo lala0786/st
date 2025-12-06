@@ -16,7 +16,6 @@ interface PropertyCardProps {
   variant?: 'default' | 'carousel';
 }
 
-// Simple, solid color placeholder
 const shimmer = (w: number, h: number) => `
 <svg width="${w}" height="${h}" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
   <defs>
@@ -75,6 +74,8 @@ export function PropertyCard({ property, variant = 'default' }: PropertyCardProp
     e.preventDefault(); // Prevent link navigation
     setIsSaved(!isSaved);
   };
+  
+  const sellerPhone = property.sellerPhone || '+919999999999';
 
   return (
     <Card className={cn(
@@ -136,11 +137,15 @@ export function PropertyCard({ property, variant = 'default' }: PropertyCardProp
                     {formatPrice(property.price)} {property.listingType === 'Rent' && <span className="text-sm font-normal text-muted-foreground">/ month</span>}
                 </p>
                 <div className="flex items-center gap-2">
-                    <Button size="icon" className="bg-secondary hover:bg-secondary/90 h-8 w-8">
-                        <Phone className="w-4 h-4"/>
+                    <Button asChild size="icon" className="bg-secondary hover:bg-secondary/90 h-8 w-8">
+                       <Link href={`tel:${sellerPhone}`}>
+                         <Phone className="w-4 h-4"/>
+                       </Link>
                     </Button>
-                    <Button size="icon" variant="outline" className="h-8 w-8">
-                        <MessageCircle className="w-4 h-4"/>
+                    <Button asChild size="icon" variant="outline" className="h-8 w-8">
+                         <Link href={`https://wa.me/${sellerPhone}`} target="_blank">
+                            <MessageCircle className="w-4 h-4"/>
+                        </Link>
                     </Button>
                 </div>
             </div>
