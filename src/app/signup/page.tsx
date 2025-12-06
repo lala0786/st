@@ -41,8 +41,8 @@ export default function SignupPage() {
       }
     });
 
-    if (areAllKeysPresent && !window.recaptchaVerifier) {
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+    if (areAllKeysPresent && !(window as any).recaptchaVerifier) {
+      (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
           'size': 'invisible',
       });
     }
@@ -116,21 +116,21 @@ export default function SignupPage() {
 
   const handleSendOtp = async (e: React.FormEvent) => {
       e.preventDefault();
-      if (!ensureFirebaseConfigured() || !window.recaptchaVerifier) return;
+      if (!ensureFirebaseConfigured() || !(window as any).recaptchaVerifier) return;
       
       setLoading(true);
       try {
           const formattedPhone = `+91${phone}`;
-          const confirmation = await signInWithPhoneNumber(auth, formattedPhone, window.recaptchaVerifier);
+          const confirmation = await signInWithPhoneNumber(auth, formattedPhone, (window as any).recaptchaVerifier);
           setConfirmationResult(confirmation);
           setOtpSent(true);
           toast({ title: "OTP Sent", description: `An OTP has been sent to ${formattedPhone}` });
       } catch (error: any) {
           console.error("Error sending OTP: ", error);
           handleSignupError("OTP Error", error.message || "Could not send OTP. Please check the number.");
-          if (window.grecaptcha && window.recaptchaVerifier) {
-            window.recaptchaVerifier.render().then((widgetId: any) => {
-                window.grecaptcha.reset(widgetId);
+          if ((window as any).grecaptcha && (window as any).recaptchaVerifier) {
+            (window as any).recaptchaVerifier.render().then((widgetId: any) => {
+                (window as any).grecaptcha.reset(widgetId);
             });
           }
       } finally {

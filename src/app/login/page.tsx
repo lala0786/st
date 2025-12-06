@@ -31,6 +31,7 @@ export default function LoginPage() {
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
+  const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email');
 
   useEffect(() => {
     if (!auth) return;
@@ -40,7 +41,6 @@ export default function LoginPage() {
       }
     });
 
-    // Set up reCAPTCHA only if keys are present and it hasn't been set up
     if (areAllKeysPresent && !(window as any).recaptchaVerifier) {
       (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
         'size': 'invisible',
@@ -114,7 +114,6 @@ export default function LoginPage() {
       } catch (error: any) {
           console.error("Error sending OTP: ", error);
           handleLoginError("OTP Error", error.message || "Could not send OTP. Please check the number.");
-          // Reset reCAPTCHA
           if ((window as any).grecaptcha && (window as any).recaptchaVerifier) {
             (window as any).recaptchaVerifier.render().then((widgetId: any) => {
                 (window as any).grecaptcha.reset(widgetId);
@@ -169,41 +168,47 @@ export default function LoginPage() {
                 </span>
               </div>
             </div>
-            <form onSubmit={handleEmailLogin} className="grid gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="m@example.com"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={loading}
-                />
-              </div>
-              <div className="grid gap-2">
-                <div className="flex items-center">
-                  <Label htmlFor="password">Password</Label>
+
+            <div className="grid grid-cols-2 gap-2 text-center text-sm">
+                <button type="button" onClick={() => { setLoginMethod('email'); setOtpSent(false); }} className={`p-2 rounded-md ${loginMethod === 'email' ? 'bg-muted font-semibold' : ''}`}>Using Email</button>
+                <button type="button" onClick={() => { setLoginMethod('phone'); setOtpSent(false); }} className={`p-2 rounded-md ${loginMethod === 'phone' ? 'bg-muted font-semibold' : ''}`}>Using Phone</button>
+            </div>
+            
+            {loginMethod === 'email' && (
+              <form onSubmit={handleEmailLogin} className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="m@example.com"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={loading}
+                  />
                 </div>
-                <Input 
-                  id="password" 
-                  type="password" 
-                  required 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={loading}
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Login with Email
-              </Button>
-            </form>
+                <div className="grid gap-2">
+                  <div className="flex items-center">
+                    <Label htmlFor="password">Password</Label>
+                  </div>
+                  <Input 
+                    id="password" 
+                    type="password" 
+                    required 
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={loading}
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  Login with Email
+                </Button>
+              </form>
+            )}
             
-            <Separator className="my-2" />
-            
-            {!otpSent ? (
+            {loginMethod === 'phone' && !otpSent && (
               <form onSubmit={handleSendOtp}>
                 <div className="grid gap-2">
                     <Label htmlFor="phone">Phone Number</Label>
@@ -224,7 +229,9 @@ export default function LoginPage() {
                     </div>
                 </div>
               </form>
-            ) : (
+            )}
+
+            {loginMethod === 'phone' && otpSent && (
                <form onSubmit={handleOtpLogin} className="grid gap-4">
                   <div className="grid gap-2">
                       <Label htmlFor="otp">Enter OTP</Label>

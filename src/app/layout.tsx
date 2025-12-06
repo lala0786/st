@@ -6,7 +6,11 @@ import { BottomNav } from '@/components/bottom-nav';
 import { AnalyticsProvider } from '@/components/analytics-provider';
 import { Inter } from 'next/font/google';
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const inter = Inter({ 
+  subsets: ['latin'], 
+  variable: '--font-inter',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'Pithampur Property Hub',

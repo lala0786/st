@@ -161,7 +161,7 @@ export default function InteriorDesignerPage() {
                                      <div className="absolute bottom-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded">AI Design</div>
                                 </div>
                              </div>
-                              <Button onClick={() => handleSubmit} variant="outline" className="mt-6">
+                              <Button onClick={(e) => handleSubmit(e)} variant="outline" className="mt-6">
                                 <RefreshCw className="mr-2 h-4 w-4"/>
                                 Regenerate
                             </Button>

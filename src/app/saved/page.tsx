@@ -13,7 +13,7 @@ export default function SavedPropertiesPage() {
             </CardHeader>
             <CardContent>
                 <CardDescription>
-                    This feature is coming soon! You'll be able to see all the properties you've saved right here.
+                    This feature is under construction. Soon, you'll be able to see all the properties you've saved right here. Stay tuned!
                 </CardDescription>
             </CardContent>
         </Card>
