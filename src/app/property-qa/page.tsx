@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Loader2, UploadCloud, Sparkles, Building, HelpCircle, Bot } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { answerPropertyQuestion, PropertyQuestionOutput } from '@/ai/flows/property-qa-flow';
-import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function PropertyQAPage() {
   const [photo, setPhoto] = useState<File | null>(null);
@@ -143,27 +143,24 @@ export default function PropertyQAPage() {
                  </div>
               ) : result ? (
                  <div className="space-y-4 w-full">
-                    {result.isProperty ? (
-                       <div className="flex items-center gap-3 p-3 bg-secondary/10 rounded-lg">
-                          <Building className="h-6 w-6 text-secondary" />
-                          <div>
-                            <p className="font-semibold">Property Identified</p>
-                            <p className="text-sm text-muted-foreground">{result.propertyType}</p>
-                          </div>
-                       </div>
-                    ) : (
-                       <div className="flex items-center gap-3 p-3 bg-accent/10 rounded-lg">
-                          <HelpCircle className="h-6 w-6 text-accent" />
-                           <div>
-                              <p className="font-semibold">No Property Detected</p>
-                              <p className="text-sm text-muted-foreground">The AI could not identify a property in the image.</p>
-                          </div>
-                       </div>
-                    )}
-                    <div>
-                        <h3 className="font-semibold mb-2">Answer:</h3>
-                        <p className="text-muted-foreground leading-relaxed">{result.answer}</p>
-                    </div>
+                    <Alert>
+                        <Building className="h-4 w-4" />
+                        <AlertTitle>
+                            {result.isProperty ? `Identified: ${result.propertyType}` : 'No Property Detected'}
+                        </AlertTitle>
+                        <AlertDescription>
+                            {result.isProperty
+                                ? "The AI has identified the property type in the image."
+                                : "The AI could not identify a building or property in the image."
+                            }
+                        </AlertDescription>
+                    </Alert>
+
+                    <Alert variant="default" className="bg-primary/5 border-primary/20">
+                        <Sparkles className="h-4 w-4 text-primary" />
+                        <AlertTitle className="text-primary">Answer</AlertTitle>
+                        <AlertDescription>{result.answer}</AlertDescription>
+                    </Alert>
                  </div>
               ) : (
                 <div className="text-center text-muted-foreground">
