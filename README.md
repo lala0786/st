@@ -23,6 +23,7 @@ To run and deploy this application, you **MUST** configure your Firebase project
 
 - A [GitHub Account](https://github.com) (free).
 - A [Firebase Account](https://firebase.google.com) (free "Spark Plan" is sufficient).
+- [Node.js](https://nodejs.org/) installed on your computer.
 
 ### Step 1: Create a Firebase Project
 
@@ -50,7 +51,7 @@ To run and deploy this application, you **MUST** configure your Firebase project
 
 ### Step 3: Add Keys to Your Project
 
-1.  In your code editor on the left, find the file named `.env.local`.
+1.  In your code editor on the left, find the file named `.env.local`. If it doesn't exist, create it in the main project folder.
 2.  Paste the keys you copied from Firebase into the `.env.local` file. **Make sure to add `NEXT_PUBLIC_` before each key name.** It should look exactly like this:
 
     ```
@@ -62,9 +63,8 @@ To run and deploy this application, you **MUST** configure your Firebase project
     NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id_from_firebase
     NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id_from_firebase
     ```
-    **Note:** The Google Maps API Key is optional and can be added later if you want maps to work.
 
-### Step 4: Enable Authentication Methods
+### Step 4: Enable Firebase Services
 
 1.  In the Firebase Console, go to **Build > Authentication**.
 2.  Click the **Sign-in method** tab.
@@ -72,24 +72,37 @@ To run and deploy this application, you **MUST** configure your Firebase project
     *   **Google**
     *   **Email/Password**
     *   **Phone**
+4.  Go to **Build > Firestore Database**.
+5.  Click **Create database** and follow the steps to enable Firestore (start in production mode).
 
-**That's it! Your app is now configured and all features, including Google Login, will work.**
+**Your app is now fully configured!**
 
 ---
 
-## ☁️ Deploying to Firebase App Hosting (Go Live!)
+## ☁️ Deploying to Firebase App Hosting (Go Live for Free!)
 
-Once your app is configured, you can deploy it with a few commands.
+Once your app is configured, you can deploy it with a few commands from your computer's terminal.
 
 1.  **Install Dependencies:**
-    In the terminal, run:
+    In your project folder, run:
     ```bash
     npm install
     ```
 
-2.  **Deploy!**
+2.  **Install Firebase Tools:**
+    If you don't have it, install it globally:
+    ```bash
+    npm install -g firebase-tools
+    ```
+
+3.  **Login to Firebase:**
+    ```bash
+    firebase login
+    ```
+
+4.  **Deploy!**
     Run the final command:
     ```bash
     firebase deploy
     ```
-    After a few minutes, the CLI will give you your live URL (e.g., `https://your-project-id.web.app`). Congratulations, your app is live!
+    After a few minutes, the terminal will give you your live URL (e.g., `https://your-project-id.web.app`). Congratulations, your app is live on the internet for free!
