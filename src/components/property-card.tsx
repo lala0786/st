@@ -9,7 +9,11 @@ import type { Property } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { auth, db } from '@/lib/firebase';
+import { doc, getDoc, setDoc, deleteDoc, onSnapshot } from "firebase/firestore";
+import { useToast } from '@/hooks/use-toast';
+import { onAuthStateChanged, User } from 'firebase/auth';
 
 interface PropertyCardProps {
   property: Partial<Property>;
@@ -38,6 +42,27 @@ const toBase64 = (str: string) =>
 
 export function PropertyCard({ property, variant = 'default' }: PropertyCardProps) {
   const [isSaved, setIsSaved] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (!auth) return;
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (user && property.id && db) {
+      const savedPropertyRef = doc(db, 'users', user.uid, 'savedProperties', property.id);
+      const unsubscribe = onSnapshot(savedPropertyRef, (doc) => {
+        setIsSaved(doc.exists());
+      });
+      return () => unsubscribe();
+    }
+  }, [user, property.id]);
+
 
   const formatPrice = (price: number | undefined) => {
     if (price === undefined || isNaN(price)) return "N/A";
@@ -70,9 +95,37 @@ export function PropertyCard({ property, variant = 'default' }: PropertyCardProp
   
   const postedDate = property.createdAt ? formatDistanceToNow(new Date(property.createdAt.seconds * 1000), { addSuffix: true }) : 'Recently';
 
-  const handleSaveToggle = (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent link navigation
-    setIsSaved(!isSaved);
+  const handleSaveToggle = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please log in to save properties.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!db || !property.id) return;
+
+    const savedPropertyRef = doc(db, 'users', user.uid, 'savedProperties', property.id);
+    
+    try {
+      if (isSaved) {
+        await deleteDoc(savedPropertyRef);
+        toast({ title: "Removed", description: "Property removed from your saved list." });
+      } else {
+        // We only need to store a reference, not the whole property object
+        await setDoc(savedPropertyRef, { 
+            propertyId: property.id,
+            savedAt: new Date(),
+        });
+        toast({ title: "Saved!", description: "Property added to your saved list." });
+      }
+      setIsSaved(!isSaved);
+    } catch (error) {
+        console.error("Error saving property: ", error);
+        toast({ title: "Error", description: "Could not update your saved list.", variant: "destructive" });
+    }
   };
   
   const sellerPhone = property.sellerPhone || '+919999999999';
