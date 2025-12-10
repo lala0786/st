@@ -34,9 +34,10 @@ const formSchema = z.object({
   bathrooms: z.coerce.number().min(0, "Bathrooms cannot be negative.").max(20),
   location: z.string().min(5, "Location is required. Please be specific."),
   description: z.string().min(20, "Description must be at least 20 characters.").max(1000),
-  photos: z.any().refine((files) => files?.length > 0, "At least one photo is required.")
+  photos: z.instanceof(FileList)
+    .refine((files) => files?.length > 0, "At least one photo is required.")
     .refine((files) => files?.length <= MAX_PHOTOS, `You can upload a maximum of ${MAX_PHOTOS} photos.`)
-    .refine((files) => !files || Array.from(files).every((file: any) => file.size <= MAX_FILE_SIZE), `Each file must be less than 5MB.`),
+    .refine((files) => Array.from(files).every((file) => file.size <= MAX_FILE_SIZE), `Each file must be less than 5MB.`),
 })
 
 type FormValues = z.infer<typeof formSchema>;
@@ -145,6 +146,7 @@ export default function PostPropertyPage() {
     setSubmissionStatus('Compressing images...');
     const photoFiles = Array.from(photos);
     const compressedFiles = await Promise.all(photoFiles.map(compressImage));
+    
     setUploadProgress(0);
     setSubmissionStatus('Uploading images...');
   
@@ -406,7 +408,16 @@ export default function PostPropertyPage() {
                                           <p className="text-xs text-muted-foreground">Up to {MAX_PHOTOS} photos (PNG, JPG, max 5MB each)</p>
                                       </>
                                   )}
-                                  <Input id="photo-upload" type="file" className="hidden" onChange={handlePhotoChange} accept="image/png, image/jpeg" multiple disabled={submitting} />
+                                  <Input 
+                                      id="photo-upload" 
+                                      type="file" 
+                                      className="hidden" 
+                                      multiple 
+                                      disabled={submitting}
+                                      {...form.register("photos")}
+                                      onChange={handlePhotoChange}
+                                      accept="image/png, image/jpeg"
+                                  />
                               </label>
                           </FormControl>
                           <FormDescription>Good photos attract more buyers. Upload clear, bright pictures.</FormDescription>
