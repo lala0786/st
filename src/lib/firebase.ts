@@ -1,4 +1,3 @@
-
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 import { getAnalytics, isSupported, type Analytics } from "firebase/analytics";
 import { getAuth, type Auth } from "firebase/auth";
@@ -24,25 +23,24 @@ export const areAllKeysPresent =
     !!firebaseConfig.messagingSenderId &&
     !!firebaseConfig.appId;
 
-let app: FirebaseApp | null = null;
-let auth: Auth | null = null;
+let app: FirebaseApp;
+let auth: Auth;
 let analytics: Promise<Analytics | null> | null = null;
-let db: Firestore | null = null;
-let storage: FirebaseStorage | null = null;
+let db: Firestore;
+let storage: FirebaseStorage;
 
-// Initialize Firebase only if all the keys are present.
-// This prevents the app from crashing if the keys are not set.
+// Initialize Firebase only if all the keys are present and we are not in a server environment where it might have been already initialized.
 if (areAllKeysPresent) {
-    try {
-        app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-        auth = getAuth(app);
-        db = getFirestore(app);
-        storage = getStorage(app);
-        if (typeof window !== 'undefined') {
-            analytics = isSupported().then(yes => (yes ? getAnalytics(app as FirebaseApp) : null));
-        }
-    } catch (e) {
-        console.error("Firebase initialization error", e);
+    if (getApps().length === 0) {
+        app = initializeApp(firebaseConfig);
+    } else {
+        app = getApp();
+    }
+    auth = getAuth(app);
+    db = getFirestore(app);
+    storage = getStorage(app);
+    if (typeof window !== 'undefined') {
+        analytics = isSupported().then(yes => (yes ? getAnalytics(app) : null));
     }
 } else {
     // If the keys are not present, we log a warning to the console.
@@ -50,6 +48,11 @@ if (areAllKeysPresent) {
     if (process.env.NODE_ENV !== 'production') {
         console.warn("Firebase configuration keys are missing or incomplete. Firebase features will be disabled. Please create a .env.local file with the necessary keys.");
     }
+    // Provide dummy objects to prevent crashes if code tries to access them
+    app = {} as FirebaseApp;
+    auth = {} as Auth;
+    db = {} as Firestore;
+    storage = {} as FirebaseStorage;
 }
 
 export { app, auth, analytics, db, storage };
