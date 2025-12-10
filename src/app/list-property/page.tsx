@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useForm } from "react-hook-form"
@@ -36,7 +37,7 @@ const formSchema = z.object({
   description: z.string().min(20, "Description must be at least 20 characters.").max(1000),
   photos: z.custom<FileList>().refine((files) => files?.length > 0, "At least one photo is required.")
     .refine((files) => files?.length <= MAX_PHOTOS, `You can upload a maximum of ${MAX_PHOTOS} photos.`)
-    .refine((files) => Array.from(files).every(file => file.size <= MAX_FILE_SIZE), `Each file must be less than 5MB.`),
+    .refine((files) => !files || Array.from(files).every(file => file.size <= MAX_FILE_SIZE), `Each file must be less than 5MB.`),
 })
 
 type FormValues = z.infer<typeof formSchema>;
@@ -338,5 +339,7 @@ export default function PostPropertyPage() {
     </div>
   )
 }
+
+    
 
     
