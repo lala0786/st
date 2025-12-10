@@ -14,6 +14,7 @@ import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import type { Property } from "@/lib/types";
 import { PropertyCard } from "@/components/property-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Link from "next/link";
 
 
 export default function ProfilePage() {
@@ -175,8 +176,8 @@ export default function ProfilePage() {
                     <Home className="mx-auto h-12 w-12 mb-4" />
                     <p className="font-semibold">You haven't listed any properties yet.</p>
                     <p className="text-sm">Click the button below to get started.</p>
-                    <Button asChild className="mt-4" onClick={() => router.push('/list-property')}>
-                        <a>List a Property</a>
+                    <Button asChild className="mt-4">
+                        <Link href="/list-property">List a Property</Link>
                     </Button>
                 </div>
               )}
