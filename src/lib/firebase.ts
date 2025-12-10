@@ -16,7 +16,7 @@ const firebaseConfig = {
 };
 
 // A check to see if all the necessary keys are present in the environment variables.
-const areAllKeysPresent = 
+export const areAllKeysPresent = 
     !!firebaseConfig.apiKey &&
     !!firebaseConfig.authDomain &&
     !!firebaseConfig.projectId &&
@@ -47,9 +47,9 @@ if (areAllKeysPresent) {
 } else {
     // If the keys are not present, we log a warning to the console.
     // The app will continue to run, but Firebase features will be disabled.
-    if (typeof window !== 'undefined') {
-      console.warn("Firebase configuration keys are missing. Firebase features will be disabled. Please check your .env.local file.");
+    if (process.env.NODE_ENV !== 'production') {
+        console.warn("Firebase configuration keys are missing or incomplete. Firebase features will be disabled. Please create a .env.local file with the necessary keys.");
     }
 }
 
-export { app, auth, analytics, db, storage, areAllKeysPresent };
+export { app, auth, analytics, db, storage };

@@ -152,6 +152,7 @@ export default function PostPropertyPage() {
       setUploadProgress(0);
 
       const fileProgress: { [key: string]: { transferred: number; total: number } } = {};
+      const totalSize = compressedFiles.reduce((acc, file) => acc + file.size, 0);
 
       const uploadPromises = compressedFiles.map(photo => {
         return new Promise<string>((resolveFile, rejectFile) => {
@@ -162,8 +163,7 @@ export default function PostPropertyPage() {
             (snapshot: UploadTaskSnapshot) => {
               fileProgress[photo.name] = { transferred: snapshot.bytesTransferred, total: snapshot.totalBytes };
               const totalTransferred = Object.values(fileProgress).reduce((acc, { transferred }) => acc + transferred, 0);
-              const totalBytes = Object.values(fileProgress).reduce((acc, { total }) => acc + total, 0);
-              setUploadProgress(Math.round((totalTransferred / totalBytes) * 100));
+              setUploadProgress(Math.round((totalTransferred / totalSize) * 100));
             },
             (error) => {
               console.error(`Upload failed for ${photo.name}:`, error);

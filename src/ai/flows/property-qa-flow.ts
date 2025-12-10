@@ -45,7 +45,7 @@ Finally, provide a helpful and concise answer to the user's question based on th
 Photo: {{media url=photoDataUri}}
 Question: {{{question}}}
 
-Answer the user's question directly, assuming the context of the image.`,
+Answer the user's question directly, assuming the context of the image. Your response must be in a structured JSON format.`,
 });
 
 const propertyQuestionFlow = ai.defineFlow(

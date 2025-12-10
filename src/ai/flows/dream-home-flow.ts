@@ -75,6 +75,29 @@ async function getRecentProperties(count: number = 20): Promise<Property[]> {
     }
 }
 
+const dreamHomePrompt = ai.definePrompt({
+    name: 'dreamHomePrompt',
+    input: { schema: z.object({
+        userDescription: z.string(),
+        properties: z.array(z.any()),
+    })},
+    output: { schema: DreamHomeOutputSchema },
+    prompt: `You are an empathetic real estate assistant. Your goal is to help a user find their dream home by understanding their emotional and lifestyle needs, not just technical specs.
+
+User's Dream Home Description: "{{userDescription}}"
+
+First, analyze the user's description and identify 3-5 key features or feelings they are looking for. Explain why each feature is important based on their words.
+
+Second, I have a list of available properties. Analyze this list and select up to 3 properties that are the best emotional and functional match for the user's dream. For each matched property, provide a compelling, personalized reason why it's a great fit, connecting it directly to the user's description.
+
+Available Properties:
+---
+{{{JSONstringify properties}}}
+---
+
+Your response must be in a structured JSON format.`,
+});
+
 
 const dreamHomeFlow = ai.defineFlow(
   {
@@ -96,30 +119,7 @@ const dreamHomeFlow = ai.defineFlow(
         amenities: p.amenities?.join(', ') || 'none',
     }));
 
-    const prompt = ai.definePrompt({
-        name: 'dreamHomePrompt',
-        input: { schema: z.object({
-            userDescription: z.string(),
-            properties: z.array(z.any()),
-        })},
-        output: { schema: DreamHomeOutputSchema },
-        prompt: `You are an empathetic real estate assistant. Your goal is to help a user find their dream home by understanding their emotional and lifestyle needs, not just technical specs.
-
-User's Dream Home Description: "{{userDescription}}"
-
-First, analyze the user's description and identify 3-5 key features or feelings they are looking for. Explain why each feature is important based on their words.
-
-Second, I have a list of available properties. Analyze this list and select up to 3 properties that are the best emotional and functional match for the user's dream. For each matched property, provide a compelling, personalized reason why it's a great fit, connecting it directly to the user's description.
-
-Available Properties:
----
-{{{JSONstringify properties}}}
----
-
-Your response should be in a structured JSON format.`,
-    });
-
-    const { output } = await prompt({
+    const { output } = await dreamHomePrompt({
         userDescription: input.description,
         properties: propertiesContext,
     });
