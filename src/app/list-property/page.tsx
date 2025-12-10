@@ -93,7 +93,6 @@ export default function PostPropertyPage() {
       }
       
       const photoFiles = Array.from(photos);
-      const photoURLs: string[] = [];
       let totalProgress = 0;
       const fileProgress: { [key: string]: number } = {};
 
@@ -207,7 +206,11 @@ export default function PostPropertyPage() {
   };
   
   if (loading) {
-    return <div className="container mx-auto flex justify-center py-12"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>
+    return (
+      <div className="container mx-auto flex justify-center py-12">
+        <Loader2 className="h-16 w-16 animate-spin text-primary" />
+      </div>
+    );
   }
 
   return (
@@ -293,7 +296,7 @@ export default function PostPropertyPage() {
                           <FormItem><FormLabel>Price (in ₹)</FormLabel><FormControl><Input type="number" placeholder="e.g., 4500000" {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
                        <FormField control={form.control} name="area" render={({ field }) => (
-                          <FormItem><FormLabel>Area (in sq. ft.)</FormLabel><FormControl><Input type="number" placeholder="e.g., 1200" {...field} /></FormControl><FormMessage /></FormMessage>
+                          <FormItem><FormLabel>Area (in sq. ft.)</FormLabel><FormControl><Input type="number" placeholder="e.g., 1200" {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
                      </div>
                   </div>
@@ -313,7 +316,7 @@ export default function PostPropertyPage() {
                         <FormItem><FormLabel>Location / Address</FormLabel><FormControl><Input placeholder="Enter full address, landmark, or city" {...field} /></FormControl><FormMessage /></FormItem>
                       )} />
                      <FormField control={form.control} name="description" render={({ field }) => (
-                        <FormItem><FormLabel>Property Description</FormLabel><FormControl><Textarea placeholder="Describe your property in detail..." className="min-h-[120px]" {...field} /></FormControl><FormMessage /></FormMessage>
+                        <FormItem><FormLabel>Property Description</FormLabel><FormControl><Textarea placeholder="Describe your property in detail..." className="min-h-[120px]" {...field} /></FormControl><FormMessage /></FormItem>
                       )} />
                    </div>
                 )}
@@ -373,3 +376,5 @@ export default function PostPropertyPage() {
     </div>
   )
 }
+
+    
