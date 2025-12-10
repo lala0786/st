@@ -100,7 +100,7 @@ const dreamHomeFlow = ai.defineFlow(
         name: 'dreamHomePrompt',
         input: { schema: z.object({
             userDescription: z.string(),
-            properties: z.any()
+            properties: z.array(z.any()),
         })},
         output: { schema: DreamHomeOutputSchema },
         prompt: `You are an empathetic real estate assistant. Your goal is to help a user find their dream home by understanding their emotional and lifestyle needs, not just technical specs.
