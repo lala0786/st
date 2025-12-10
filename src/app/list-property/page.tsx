@@ -19,7 +19,7 @@ import { auth, db, storage } from "@/lib/firebase"
 import { useRouter } from "next/navigation"
 import { onAuthStateChanged, User } from "firebase/auth"
 import { addDoc, collection } from "firebase/firestore"
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
+import { ref, uploadBytesResumable, getDownloadURL, type UploadTaskSnapshot } from "firebase/storage"
 import { Progress } from "@/components/ui/progress"
 
 const MAX_PHOTOS = 10;
@@ -53,6 +53,7 @@ export default function PostPropertyPage() {
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
   const { toast } = useToast();
   const router = useRouter();
@@ -83,19 +84,48 @@ export default function PostPropertyPage() {
     },
      mode: "onBlur"
   })
+  
+  const uploadPhotos = (photos: FileList): Promise<string[]> => {
+    return new Promise((resolve, reject) => {
+      if (!storage || !user) {
+        reject(new Error("Firebase not configured or user not logged in."));
+        return;
+      }
+      
+      const photoFiles = Array.from(photos);
+      const photoURLs: string[] = [];
+      let totalProgress = 0;
+      const fileProgress: { [key: string]: number } = {};
 
-  const uploadPhotos = async (photos: FileList): Promise<string[]> => {
-    if (!storage || !user) throw new Error("Firebase not configured or user not logged in.");
-    
-    const photoURLs: string[] = [];
-    for (const photo of Array.from(photos)) {
-      const photoRef = ref(storage, `properties/${user.uid}/${Date.now()}-${photo.name}`);
-      await uploadBytes(photoRef, photo);
-      const url = await getDownloadURL(photoRef);
-      photoURLs.push(url);
-    }
-    return photoURLs;
+      const uploadPromises = photoFiles.map(photo => {
+        return new Promise<string>((resolveFile, rejectFile) => {
+          const photoRef = ref(storage, `properties/${user.uid}/${Date.now()}-${photo.name}`);
+          const uploadTask = uploadBytesResumable(photoRef, photo);
+
+          uploadTask.on('state_changed',
+            (snapshot: UploadTaskSnapshot) => {
+              fileProgress[photo.name] = (snapshot.bytesTransferred / snapshot.totalBytes);
+              totalProgress = Object.values(fileProgress).reduce((acc, prog) => acc + prog, 0);
+              setUploadProgress(Math.round((totalProgress / photoFiles.length) * 100));
+            },
+            (error) => {
+              console.error(`Upload failed for ${photo.name}:`, error);
+              rejectFile(error);
+            },
+            async () => {
+              const url = await getDownloadURL(uploadTask.snapshot.ref);
+              resolveFile(url);
+            }
+          );
+        });
+      });
+
+      Promise.all(uploadPromises)
+        .then(urls => resolve(urls))
+        .catch(error => reject(error));
+    });
   }
+
   
   const processForm = async (values: FormValues) => {
      if (!db || !user) {
@@ -103,6 +133,7 @@ export default function PostPropertyPage() {
         return;
     }
     setSubmitting(true);
+    setUploadProgress(0);
     try {
         const imageUrls = await uploadPhotos(values.photos);
 
@@ -133,6 +164,7 @@ export default function PostPropertyPage() {
         });
     } finally {
         setSubmitting(false);
+        setUploadProgress(0);
     }
   }
 
@@ -187,9 +219,11 @@ export default function PostPropertyPage() {
         </CardHeader>
         <CardContent>
             <div className="space-y-8">
-              <div className="flex items-center gap-4">
-                 <Progress value={((currentStep + 1) / steps.length) * 100} className="w-full" />
-                 <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Step {currentStep + 1} of {steps.length}</span>
+              <div className="space-y-2">
+                 <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Step {currentStep + 1} of {steps.length}</span>
+                 </div>
+                 <Progress value={submitting ? uploadProgress : ((currentStep + 1) / steps.length) * 100} className="w-full h-2" />
               </div>
               
               <Form {...form}>
@@ -279,7 +313,7 @@ export default function PostPropertyPage() {
                         <FormItem><FormLabel>Location / Address</FormLabel><FormControl><Input placeholder="Enter full address, landmark, or city" {...field} /></FormControl><FormMessage /></FormItem>
                       )} />
                      <FormField control={form.control} name="description" render={({ field }) => (
-                        <FormItem><FormLabel>Property Description</FormLabel><FormControl><Textarea placeholder="Describe your property in detail..." className="min-h-[120px]" {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>Property Description</FormLabel><FormControl><Textarea placeholder="Describe your property in detail..." className="min-h-[120px]" {...field} /></FormControl><FormMessage /></FormMessage>
                       )} />
                    </div>
                 )}
@@ -324,12 +358,12 @@ export default function PostPropertyPage() {
           </div>
         </CardContent>
          <CardFooter className="flex justify-between">
-            <Button type="button" variant="outline" onClick={prev} disabled={currentStep === 0}>
+            <Button type="button" variant="outline" onClick={prev} disabled={currentStep === 0 || submitting}>
                 <ArrowLeft className="mr-2 h-4 w-4" /> Previous
             </Button>
             <Button type="button" onClick={next} disabled={submitting}>
                 {submitting ? (
-                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting...</>
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {uploadProgress > 0 ? `Uploading (${uploadProgress}%)...` : 'Submitting...'}</>
                 ) : (
                     currentStep === steps.length - 1 ? 'Submit Property' : 'Next'
                 )}
@@ -339,7 +373,5 @@ export default function PostPropertyPage() {
     </div>
   )
 }
-
-    
 
     
