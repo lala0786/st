@@ -5,15 +5,14 @@ import { getAuth, type Auth } from "firebase/auth";
 import { getFirestore, type Firestore } from "firebase/firestore";
 import { getStorage, type FirebaseStorage } from "firebase/storage";
 
-// Hardcoding the config directly to ensure the correct project is being used.
 const firebaseConfig = {
-  apiKey: "AIzaSyB0GgnTPrrdmR2iL17Td6_ZPE-H9NX0gf4",
-  authDomain: "pithampur-property-hub.firebaseapp.com",
-  projectId: "pithampur-property-hub",
-  storageBucket: "pithampur-property-hub.appspot.com", // Corrected the storage bucket domain
-  messagingSenderId: "293013275592",
-  appId: "1:293013275592:web:abea85cdaab1f8b47076fd",
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID // This can remain as it's less critical for auth
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
 // A check to see if all the necessary keys are present in the environment variables.
@@ -49,7 +48,7 @@ if (areAllKeysPresent) {
     // If the keys are not present, we log a warning to the console.
     // The app will continue to run, but Firebase features will be disabled.
     if (typeof window !== 'undefined') {
-      console.warn("Firebase configuration keys are missing. Firebase features will be disabled.");
+      console.warn("Firebase configuration keys are missing. Firebase features will be disabled. Please check your .env.local file.");
     }
 }
 

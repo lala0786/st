@@ -113,7 +113,7 @@ Second, I have a list of available properties. Analyze this list and select up t
 
 Available Properties:
 ---
-{{{json properties}}}
+{{{JSONstringify properties}}}
 ---
 
 Your response should be in a structured JSON format.`,
