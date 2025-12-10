@@ -1,11 +1,11 @@
+
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Calculator as CalculatorIcon, IndianRupee } from "lucide-react";
+import { Calculator as CalculatorIcon } from "lucide-react";
 import { Slider } from '@/components/ui/slider';
 
 const formatCurrency = (value: number) => {
@@ -21,6 +21,11 @@ export default function LoanCalculatorPage() {
     const [interestRate, setInterestRate] = useState(8.5);
     const [loanTenure, setLoanTenure] = useState(20);
     const [monthlyEmi, setMonthlyEmi] = useState<number | null>(null);
+
+    useEffect(() => {
+      calculateEmi();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [loanAmount, interestRate, loanTenure]);
 
     const calculateEmi = () => {
         if (!loanAmount || !interestRate || !loanTenure) return;
@@ -39,7 +44,7 @@ export default function LoanCalculatorPage() {
     };
     
     const totalPayable = (monthlyEmi || 0) * loanTenure * 12;
-    const totalInterest = totalPayable - loanAmount;
+    const totalInterest = totalPayable > 0 ? totalPayable - loanAmount : 0;
 
 
     return (
@@ -50,7 +55,7 @@ export default function LoanCalculatorPage() {
                         <CalculatorIcon className="text-primary" /> Home Loan EMI Calculator
                     </CardTitle>
                     <CardDescription>
-                        Estimate the monthly payments for your dream home.
+                        Instantly estimate the monthly payments for your dream home.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-8 pt-6">
@@ -100,10 +105,6 @@ export default function LoanCalculatorPage() {
                     </div>
                 </CardContent>
                 <CardFooter className="flex flex-col gap-4">
-                    <Button onClick={calculateEmi} size="lg" className="w-full max-w-sm">
-                        Calculate EMI
-                    </Button>
-
                     {monthlyEmi !== null && (
                         <div className="w-full mt-6 p-6 bg-muted/50 rounded-lg text-center space-y-4">
                             <div>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -5,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { SlidersHorizontal, Search, Building2, Home, Trees, Building, ShoppingCart, DollarSign } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 const quickFilters = [
     { label: 'Flats', href: '/search?type=Apartment', icon: Building2 },
@@ -18,6 +20,7 @@ const quickFilters = [
 export function PropertySearchForm() {
     const router = useRouter();
     const [searchQuery, setSearchQuery] = useState('');
+    const { toast } = useToast();
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -27,6 +30,13 @@ export function PropertySearchForm() {
 
     const handleQuickFilterClick = (href: string) => {
         router.push(href);
+    }
+
+    const handleAdvancedFilterClick = () => {
+        toast({
+            title: "Coming Soon!",
+            description: "Advanced filters will be available in a future update.",
+        });
     }
 
   return (
@@ -46,9 +56,9 @@ export function PropertySearchForm() {
           <Search className="h-5 w-5" />
            <span className="sr-only">Search</span>
         </Button>
-        <Button variant="outline" size="icon" className="h-12 w-12 flex-shrink-0" disabled>
+        <Button variant="outline" size="icon" className="h-12 w-12 flex-shrink-0" onClick={handleAdvancedFilterClick}>
           <SlidersHorizontal className="h-5 w-5" />
-           <span className="sr-only">Filters (Coming Soon)</span>
+           <span className="sr-only">Filters</span>
         </Button>
       </form>
       <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4">

@@ -1,3 +1,4 @@
+
 "use client"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -87,6 +88,13 @@ export default function ProfilePage() {
     }
   };
 
+  const handleEditProfile = () => {
+    toast({
+      title: "Coming Soon!",
+      description: "Profile editing functionality will be available in a future update.",
+    });
+  }
+
   const getInitials = (name: string | null | undefined) => {
     if (!name) return "U";
     const names = name.split(' ');
@@ -136,7 +144,7 @@ export default function ProfilePage() {
                 </div>
             </CardContent>
             <CardFooter className="flex flex-col sm:flex-row gap-2 justify-center">
-                <Button disabled>
+                <Button onClick={handleEditProfile}>
                     <Edit className="mr-2 h-4 w-4" /> Edit Profile
                 </Button>
                  <Button variant="destructive" onClick={handleLogout}>

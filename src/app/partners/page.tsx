@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -5,7 +6,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle, Handshake, Zap, Goal, UserPlus } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Zap, Goal, UserPlus, Handshake } from "lucide-react";
+import { useState } from "react";
 
 const benefits = [
   {
@@ -26,6 +29,36 @@ const benefits = [
 ];
 
 export default function PartnersPage() {
+  const { toast } = useToast();
+  const [formState, setFormState] = useState({ name: '', phone: '', email: '', experience: ''});
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { id, value } = e.target;
+    setFormState(prev => ({...prev, [id]: value}));
+  };
+
+  const handleSubmit = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    if (!formState.name || !formState.phone || !formState.email) {
+       toast({
+        title: "Missing Information",
+        description: "Please fill out all the required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // In a real app, you would send this data to a server or email service.
+    // For this demo, we'll just show a success toast.
+    toast({
+      title: "Application Submitted!",
+      description: `Thank you, ${formState.name}. Our team will contact you shortly.`,
+    });
+
+    // Reset form
+    setFormState({ name: '', phone: '', email: '', experience: ''});
+  };
+
   return (
     <div className="container mx-auto px-4 md:px-6 py-12">
       <div className="text-center max-w-3xl mx-auto">
@@ -61,24 +94,24 @@ export default function PartnersPage() {
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
-              <Input id="name" placeholder="Your Name" />
+              <Input id="name" placeholder="Your Name" value={formState.name} onChange={handleInputChange} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">Phone Number</Label>
-              <Input id="phone" type="tel" placeholder="Your Phone Number" />
+              <Input id="phone" type="tel" placeholder="Your Phone Number" value={formState.phone} onChange={handleInputChange} />
             </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email Address</Label>
-            <Input id="email" type="email" placeholder="Your Email Address" />
+            <Input id="email" type="email" placeholder="Your Email Address" value={formState.email} onChange={handleInputChange} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="experience">Your Experience</Label>
-            <Textarea id="experience" placeholder="Tell us a bit about your experience in the real estate market." />
+            <Textarea id="experience" placeholder="Tell us a bit about your experience in the real estate market." value={formState.experience} onChange={handleInputChange} />
           </div>
         </CardContent>
         <CardFooter>
-          <Button size="lg" className="w-full">
+          <Button size="lg" className="w-full" onClick={handleSubmit}>
             Submit Application
           </Button>
         </CardFooter>
