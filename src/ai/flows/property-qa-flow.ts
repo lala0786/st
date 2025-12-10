@@ -1,4 +1,3 @@
-hpw to fix this error
 'use server';
 /**
  * @fileOverview A visual question answering agent for properties.

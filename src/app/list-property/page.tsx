@@ -35,9 +35,9 @@ const formSchema = z.object({
   bathrooms: z.coerce.number().min(0, "Bathrooms cannot be negative.").max(20),
   location: z.string().min(5, "Location is required. Please be specific."),
   description: z.string().min(20, "Description must be at least 20 characters.").max(1000),
-  photos: z.custom<FileList>().refine((files) => files?.length > 0, "At least one photo is required.")
+  photos: z.any().refine((files) => files?.length > 0, "At least one photo is required.")
     .refine((files) => files?.length <= MAX_PHOTOS, `You can upload a maximum of ${MAX_PHOTOS} photos.`)
-    .refine((files) => !files || Array.from(files).every(file => file.size <= MAX_FILE_SIZE), `Each file must be less than 5MB.`),
+    .refine((files) => Array.from(files).every((file: any) => file.size <= MAX_FILE_SIZE), `Each file must be less than 5MB.`),
 })
 
 type FormValues = z.infer<typeof formSchema>;
@@ -55,6 +55,7 @@ export default function PostPropertyPage() {
   const [submitting, setSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
+  const [submissionStatus, setSubmissionStatus] = useState<string>('');
   const { toast } = useToast();
   const router = useRouter();
 
@@ -84,28 +85,86 @@ export default function PostPropertyPage() {
     },
      mode: "onBlur"
   })
-  
-  const uploadPhotos = (photos: FileList): Promise<string[]> => {
+
+  const compressImage = (file: File): Promise<File> => {
     return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = document.createElement('img');
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 1920;
+          const MAX_HEIGHT = 1080;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            return reject(new Error('Failed to get canvas context'));
+          }
+          ctx.drawImage(img, 0, 0, width, height);
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) {
+                return reject(new Error('Canvas to Blob conversion failed'));
+              }
+              const newFile = new File([blob], file.name, {
+                type: 'image/jpeg',
+                lastModified: Date.now(),
+              });
+              resolve(newFile);
+            },
+            'image/jpeg',
+            0.8 // 80% quality
+          );
+        };
+      };
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
+  
+  const uploadPhotos = async (photos: FileList): Promise<string[]> => {
       if (!storage || !user) {
-        reject(new Error("Firebase not configured or user not logged in."));
-        return;
+        throw new Error("Firebase not configured or user not logged in.");
       }
       
       const photoFiles = Array.from(photos);
-      let totalProgress = 0;
-      const fileProgress: { [key: string]: number } = {};
+      
+      setSubmissionStatus('Compressing images...');
+      const compressedFiles = await Promise.all(photoFiles.map(compressImage));
 
-      const uploadPromises = photoFiles.map(photo => {
+      setSubmissionStatus('Uploading images...');
+      setUploadProgress(0);
+
+      const fileProgress: { [key: string]: { transferred: number; total: number } } = {};
+
+      const uploadPromises = compressedFiles.map(photo => {
         return new Promise<string>((resolveFile, rejectFile) => {
           const photoRef = ref(storage, `properties/${user.uid}/${Date.now()}-${photo.name}`);
           const uploadTask = uploadBytesResumable(photoRef, photo);
 
           uploadTask.on('state_changed',
             (snapshot: UploadTaskSnapshot) => {
-              fileProgress[photo.name] = (snapshot.bytesTransferred / snapshot.totalBytes);
-              totalProgress = Object.values(fileProgress).reduce((acc, prog) => acc + prog, 0);
-              setUploadProgress(Math.round((totalProgress / photoFiles.length) * 100));
+              fileProgress[photo.name] = { transferred: snapshot.bytesTransferred, total: snapshot.totalBytes };
+              const totalTransferred = Object.values(fileProgress).reduce((acc, { transferred }) => acc + transferred, 0);
+              const totalBytes = Object.values(fileProgress).reduce((acc, { total }) => acc + total, 0);
+              setUploadProgress(Math.round((totalTransferred / totalBytes) * 100));
             },
             (error) => {
               console.error(`Upload failed for ${photo.name}:`, error);
@@ -119,10 +178,7 @@ export default function PostPropertyPage() {
         });
       });
 
-      Promise.all(uploadPromises)
-        .then(urls => resolve(urls))
-        .catch(error => reject(error));
-    });
+      return Promise.all(uploadPromises);
   }
 
   
@@ -132,10 +188,9 @@ export default function PostPropertyPage() {
         return;
     }
     setSubmitting(true);
-    setUploadProgress(0);
     try {
         const imageUrls = await uploadPhotos(values.photos);
-
+        setSubmissionStatus('Finalizing...');
         await addDoc(collection(db, "properties"), {
             ...values,
             photos: imageUrls,
@@ -152,6 +207,7 @@ export default function PostPropertyPage() {
         });
         form.reset();
         setPhotoPreviews([]);
+        setCurrentStep(0);
         router.push("/");
 
     } catch (error) {
@@ -164,6 +220,7 @@ export default function PostPropertyPage() {
     } finally {
         setSubmitting(false);
         setUploadProgress(0);
+        setSubmissionStatus('');
     }
   }
 
@@ -180,7 +237,7 @@ export default function PostPropertyPage() {
       }
       const newPreviews = Array.from(files).map(file => URL.createObjectURL(file));
       setPhotoPreviews(newPreviews);
-      form.setValue("photos", files);
+      form.setValue("photos", files, { shouldValidate: true });
     }
   };
 
@@ -225,6 +282,7 @@ export default function PostPropertyPage() {
               <div className="space-y-2">
                  <div className="flex justify-between items-center">
                     <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Step {currentStep + 1} of {steps.length}</span>
+                     {submitting && <span className="text-sm font-medium text-primary">{submissionStatus}</span>}
                  </div>
                  <Progress value={submitting ? uploadProgress : ((currentStep + 1) / steps.length) * 100} className="w-full h-2" />
               </div>
@@ -347,7 +405,7 @@ export default function PostPropertyPage() {
                                           <p className="text-xs text-muted-foreground">Up to {MAX_PHOTOS} photos (PNG, JPG, max 5MB each)</p>
                                       </>
                                   )}
-                                  <Input id="photo-upload" type="file" className="hidden" onChange={handlePhotoChange} accept="image/png, image/jpeg" multiple />
+                                  <Input id="photo-upload" type="file" className="hidden" onChange={handlePhotoChange} accept="image/png, image/jpeg" multiple disabled={submitting} />
                               </label>
                           </FormControl>
                           <FormDescription>Good photos attract more buyers. Upload clear, bright pictures.</FormDescription>
@@ -366,7 +424,7 @@ export default function PostPropertyPage() {
             </Button>
             <Button type="button" onClick={next} disabled={submitting}>
                 {submitting ? (
-                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {uploadProgress > 0 ? `Uploading (${uploadProgress}%)...` : 'Submitting...'}</>
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {submissionStatus} {uploadProgress > 0 && `(${uploadProgress}%)`}</>
                 ) : (
                     currentStep === steps.length - 1 ? 'Submit Property' : 'Next'
                 )}
