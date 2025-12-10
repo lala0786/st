@@ -293,7 +293,7 @@ export default function PostPropertyPage() {
                           <FormItem><FormLabel>Price (in ₹)</FormLabel><FormControl><Input type="number" placeholder="e.g., 4500000" {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
                        <FormField control={form.control} name="area" render={({ field }) => (
-                          <FormItem><FormLabel>Area (in sq. ft.)</FormLabel><FormControl><Input type="number" placeholder="e.g., 1200" {...field} /></FormControl><FormMessage /></FormItem>
+                          <FormItem><FormLabel>Area (in sq. ft.)</FormLabel><FormControl><Input type="number" placeholder="e.g., 1200" {...field} /></FormControl><FormMessage /></FormMessage>
                         )} />
                      </div>
                   </div>
@@ -373,5 +373,3 @@ export default function PostPropertyPage() {
     </div>
   )
 }
-
-    
