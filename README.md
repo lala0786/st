@@ -1,3 +1,4 @@
+
 # Pithampur Homes - AI-Powered Real Estate Platform
 
 Welcome to Pithampur Homes, a modern, AI-powered real estate platform built with Next.js, Firebase, and Google's Generative AI. This application is designed to provide a seamless and intelligent experience for buying, selling, and exploring properties, with a special focus on the Pithampur region.
