@@ -139,45 +139,42 @@ export default function PostPropertyPage() {
 
   
   const uploadPhotos = async (photos: FileList): Promise<string[]> => {
-      if (!storage || !user) {
-        throw new Error("Firebase not configured or user not logged in.");
-      }
-      
-      const photoFiles = Array.from(photos);
-      
-      setSubmissionStatus('Compressing images...');
-      const compressedFiles = await Promise.all(photoFiles.map(compressImage));
+    if (!storage || !user) {
+      throw new Error("Firebase not configured or user not logged in.");
+    }
+    
+    const photoFiles = Array.from(photos);
+    setSubmissionStatus('Compressing images...');
+    const compressedFiles = await Promise.all(photoFiles.map(compressImage));
 
-      setSubmissionStatus('Uploading images...');
-      setUploadProgress(0);
+    setUploadProgress(0);
 
-      const fileProgress: { [key: string]: { transferred: number; total: number } } = {};
-      const totalSize = compressedFiles.reduce((acc, file) => acc + file.size, 0);
+    let uploadedCount = 0;
+    const totalFiles = compressedFiles.length;
 
-      const uploadPromises = compressedFiles.map(photo => {
-        return new Promise<string>((resolveFile, rejectFile) => {
-          const photoRef = ref(storage, `properties/${user.uid}/${Date.now()}-${photo.name}`);
-          const uploadTask = uploadBytesResumable(photoRef, photo);
+    const uploadPromises = compressedFiles.map((file, index) => {
+      return new Promise<string>((resolve, reject) => {
+        setSubmissionStatus(`Uploading image ${index + 1} of ${totalFiles}...`);
+        const photoRef = ref(storage, `properties/${user.uid}/${Date.now()}-${file.name}`);
+        const uploadTask = uploadBytesResumable(photoRef, file);
 
-          uploadTask.on('state_changed',
-            (snapshot: UploadTaskSnapshot) => {
-              fileProgress[photo.name] = { transferred: snapshot.bytesTransferred, total: snapshot.totalBytes };
-              const totalTransferred = Object.values(fileProgress).reduce((acc, { transferred }) => acc + transferred, 0);
-              setUploadProgress(Math.round((totalTransferred / totalSize) * 100));
-            },
-            (error) => {
-              console.error(`Upload failed for ${photo.name}:`, error);
-              rejectFile(error);
-            },
-            async () => {
-              const url = await getDownloadURL(uploadTask.snapshot.ref);
-              resolveFile(url);
-            }
-          );
-        });
+        uploadTask.on('state_changed',
+          null, // We don't need to track individual progress anymore
+          (error) => {
+            console.error(`Upload failed for ${file.name}:`, error);
+            reject(error);
+          },
+          async () => {
+            const url = await getDownloadURL(uploadTask.snapshot.ref);
+            uploadedCount++;
+            setUploadProgress(Math.round((uploadedCount / totalFiles) * 100));
+            resolve(url);
+          }
+        );
       });
+    });
 
-      return Promise.all(uploadPromises);
+    return Promise.all(uploadPromises);
   }
 
   
