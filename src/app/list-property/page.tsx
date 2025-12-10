@@ -254,8 +254,6 @@ export default function PostPropertyPage() {
 
     if (currentStep < steps.length - 1) {
         setCurrentStep(step => step + 1);
-    } else {
-        await processForm(form.getValues());
     }
   };
 
@@ -426,23 +424,32 @@ export default function PostPropertyPage() {
                       )}
                       />
                 )}
+                <CardFooter className="flex justify-between mt-8">
+                  <Button type="button" variant="outline" onClick={prev} disabled={currentStep === 0 || submitting}>
+                      <ArrowLeft className="mr-2 h-4 w-4" /> Previous
+                  </Button>
+                  
+                  {currentStep === steps.length - 1 ? (
+                    <Button type="submit" disabled={submitting}>
+                      {submitting ? (
+                          <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {submissionStatus} {uploadProgress > 0 && `(${uploadProgress}%)`}</>
+                      ) : (
+                          'Submit Property'
+                      )}
+                    </Button>
+                  ) : (
+                    <Button type="button" onClick={next} disabled={submitting}>
+                      Next
+                    </Button>
+                  )}
+              </CardFooter>
               </form>
             </Form>
           </div>
         </CardContent>
-         <CardFooter className="flex justify-between">
-            <Button type="button" variant="outline" onClick={prev} disabled={currentStep === 0 || submitting}>
-                <ArrowLeft className="mr-2 h-4 w-4" /> Previous
-            </Button>
-            <Button type="button" onClick={next} disabled={submitting}>
-                {submitting ? (
-                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {submissionStatus} {uploadProgress > 0 && `(${uploadProgress}%)`}</>
-                ) : (
-                    currentStep === steps.length - 1 ? 'Submit Property' : 'Next'
-                )}
-            </Button>
-        </CardFooter>
       </Card>
     </div>
   )
 }
+
+    
