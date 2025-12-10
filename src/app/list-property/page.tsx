@@ -137,46 +137,51 @@ export default function PostPropertyPage() {
     });
   };
 
-  
   const uploadPhotos = async (photos: FileList): Promise<string[]> => {
     if (!storage || !user) {
       throw new Error("Firebase not configured or user not logged in.");
     }
-    
-    const photoFiles = Array.from(photos);
+  
     setSubmissionStatus('Compressing images...');
+    const photoFiles = Array.from(photos);
     const compressedFiles = await Promise.all(photoFiles.map(compressImage));
-
     setUploadProgress(0);
-
-    let uploadedCount = 0;
+    setSubmissionStatus('Uploading images...');
+  
     const totalFiles = compressedFiles.length;
-
+    let individualProgress = Array(totalFiles).fill(0);
+  
     const uploadPromises = compressedFiles.map((file, index) => {
       return new Promise<string>((resolve, reject) => {
-        setSubmissionStatus(`Uploading image ${index + 1} of ${totalFiles}...`);
         const photoRef = ref(storage, `properties/${user.uid}/${Date.now()}-${file.name}`);
         const uploadTask = uploadBytesResumable(photoRef, file);
-
+  
         uploadTask.on('state_changed',
-          null, // We don't need to track individual progress anymore
+          (snapshot: UploadTaskSnapshot) => {
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            individualProgress[index] = progress;
+            const totalProgress = individualProgress.reduce((sum, p) => sum + p, 0) / totalFiles;
+            setUploadProgress(Math.round(totalProgress));
+          },
           (error) => {
             console.error(`Upload failed for ${file.name}:`, error);
             reject(error);
           },
           async () => {
-            const url = await getDownloadURL(uploadTask.snapshot.ref);
-            uploadedCount++;
-            setUploadProgress(Math.round((uploadedCount / totalFiles) * 100));
-            resolve(url);
+            try {
+              const url = await getDownloadURL(uploadTask.snapshot.ref);
+              resolve(url);
+            } catch (error) {
+              console.error(`Failed to get download URL for ${file.name}:`, error);
+              reject(error);
+            }
           }
         );
       });
     });
-
+  
     return Promise.all(uploadPromises);
-  }
-
+  };
   
   const processForm = async (values: FormValues) => {
      if (!db || !user) {
