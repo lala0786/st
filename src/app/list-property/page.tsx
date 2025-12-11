@@ -10,10 +10,9 @@ import { useState, useEffect, type FormEvent } from "react"
 import Image from "next/image"
 import { Loader2, UploadCloud, X } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { auth, db } from "@/lib/firebase"
+import { auth } from "@/lib/firebase"
 import { useRouter } from "next/navigation"
 import { onAuthStateChanged, User } from "firebase/auth"
-import { addDoc, collection } from "firebase/firestore"
 import { Progress } from "@/components/ui/progress"
 import { Label } from "@/components/ui/label"
 import { uploadPropertyAction } from "@/actions/property"
@@ -35,10 +34,6 @@ export default function PostPropertyPage() {
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
 
   useEffect(() => {
-    if (!auth) {
-      router.push("/login");
-      return;
-    }
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
@@ -55,7 +50,7 @@ export default function PostPropertyPage() {
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files);
-      console.log("[Client] Files selected:", filesArray);
+      console.log("[Client] Files selected:", filesArray.map(f => f.name));
 
       if (filesArray.length + photos.length > MAX_PHOTOS) {
         toast({
@@ -92,7 +87,7 @@ export default function PostPropertyPage() {
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSubmitting(true);
-    setUploadProgress(10); // Initial progress
+    setUploadProgress(10);
 
     if (!user) {
         toast({ title: "Error", description: "You must be logged in.", variant: "destructive" });
@@ -113,21 +108,22 @@ export default function PostPropertyPage() {
         setSubmitting(false);
         return;
     }
-
-    // Append files to FormData
-    photos.forEach(file => {
-        formData.append("files", file);
-    });
     
     try {
-        setUploadProgress(30);
-        console.log("[Client] Getting ID token...");
+        console.log("[Client] Preparing to submit. Getting ID token...");
         const idToken = await user.getIdToken();
         formData.append('idToken', idToken);
-        console.log("[Client] Token retrieved. Calling server action...");
+        console.log("[Client] Token retrieved. Appending files to FormData...");
         
+        photos.forEach(file => {
+            formData.append("files", file);
+        });
+        
+        console.log("[Client] Calling server action 'uploadPropertyAction'...");
         setUploadProgress(50);
+        
         const result = await uploadPropertyAction(formData);
+        
         setUploadProgress(100);
 
         if (result.success && result.propertyId) {
@@ -142,7 +138,7 @@ export default function PostPropertyPage() {
             throw new Error(result.error || "An unknown error occurred on the server.");
         }
     } catch (error) {
-        console.error("[Client] Error listing property:", error);
+        console.error("[Client] Error during property submission:", error);
         toast({
             title: "Submission Failed",
             description: (error instanceof Error) ? error.message : "An unexpected error occurred. Please try again.",
@@ -150,6 +146,7 @@ export default function PostPropertyPage() {
         });
     } finally {
         setSubmitting(false);
+        setUploadProgress(0);
     }
   }
 
@@ -178,7 +175,7 @@ export default function PostPropertyPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
                   <Label>Property Type</Label>
-                  <Select name="propertyType" required>
+                  <Select name="propertyType" required defaultValue="Apartment">
                     <SelectTrigger><SelectValue placeholder="Select a property type" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Apartment">Apartment / Flat</SelectItem>
@@ -215,7 +212,7 @@ export default function PostPropertyPage() {
               <div><Label htmlFor="description">Property Description</Label><Textarea id="description" name="description" placeholder="Describe your property in detail..." className="min-h-[120px]" required/></div>
 
                <div>
-                <Label>Property Photos (Required)</Label>
+                <Label>Property Photos (Required, Max {MAX_PHOTOS})</Label>
                   <div className="mt-2">
                     <label htmlFor="photo-upload" className="block border-2 border-dashed border-muted rounded-lg p-6 text-center cursor-pointer hover:border-primary transition-colors">
                         <UploadCloud className="mx-auto h-12 w-12 text-muted-foreground" />
@@ -236,8 +233,8 @@ export default function PostPropertyPage() {
                   </div>
                 <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
                     {photoPreviews.map((src, index) => (
-                        <div key={index} className="relative aspect-square">
-                            <Image src={src} alt={`Preview ${index + 1}`} fill className="object-cover rounded-md" />
+                        <div key={src} className="relative aspect-square">
+                            <Image src={src} alt={`Preview ${index + 1}`} fill className="object-cover rounded-md" onLoad={() => URL.revokeObjectURL(src)} />
                             <button type="button" onClick={() => removePhoto(index)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 h-6 w-6 flex items-center justify-center">
                                 <X className="h-4 w-4" />
                             </button>
@@ -256,7 +253,7 @@ export default function PostPropertyPage() {
                  )}
             </CardContent>
             <CardFooter>
-              <Button type="submit" disabled={submitting} className="w-full">
+              <Button type="submit" disabled={submitting || !user} className="w-full">
                 {submitting ? (
                     <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting...</>
                 ) : (
@@ -269,5 +266,3 @@ export default function PostPropertyPage() {
     </div>
   )
 }
-
-    

@@ -1,9 +1,11 @@
+// src/actions/property.ts
 'use server';
 
-import { adminAuth, adminDb, adminStorage } from '@/lib/firebase/admin';
+import { adminAuth, adminStorage, adminDb } from '@/lib/firebase/admin';
 import { v4 as uuidv4 } from 'uuid';
 import { FieldValue } from 'firebase-admin/firestore';
 
+// Define the return type for the Server Action
 type UploadResult = {
   success: boolean;
   error?: string;
@@ -11,7 +13,7 @@ type UploadResult = {
 };
 
 export async function uploadPropertyAction(formData: FormData): Promise<UploadResult> {
-  console.log("[Server Action] Received request.");
+  console.log("[Server Action] Received form data.");
 
   // 1. Extract Data and ID Token
   const idToken = formData.get('idToken') as string;
@@ -35,6 +37,7 @@ export async function uploadPropertyAction(formData: FormData): Promise<UploadRe
   if (!rawData.title || files.length === 0) {
     return { success: false, error: 'Title and at least one file are required.' };
   }
+  console.log(`[Server Action] Received ${files.length} files.`);
 
   // 2. Authentication Check: Verify the ID Token
   let userId: string;
@@ -54,12 +57,13 @@ export async function uploadPropertyAction(formData: FormData): Promise<UploadRe
 
   const propertyId = uuidv4();
   console.log(`[Server Action] Generated new Property ID: ${propertyId}`);
+  const uploadedUrls: string[] = [];
 
   try {
-    const uploadedUrls: string[] = [];
     const bucket = adminStorage.bucket();
-
     console.log(`[Server Action] Starting upload of ${files.length} files...`);
+
+    // 3. Process and Upload Files
     for (const file of files) {
       if (file.size === 0) continue;
 
@@ -78,6 +82,7 @@ export async function uploadPropertyAction(formData: FormData): Promise<UploadRe
         },
       });
 
+      // 4. Make the file publicly readable and get the permanent URL
       await fileRef.makePublic();
       const publicUrl = fileRef.publicUrl();
       uploadedUrls.push(publicUrl);
@@ -116,5 +121,3 @@ export async function uploadPropertyAction(formData: FormData): Promise<UploadRe
     return { success: false, error: errorMessage };
   }
 }
-
-    
