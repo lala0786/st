@@ -10,7 +10,7 @@ import { useState, useEffect, type FormEvent } from "react"
 import Image from "next/image"
 import { Loader2, UploadCloud, X } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { auth } from "@/lib/firebase"
+import { auth, db } from "@/lib/firebase"
 import { useRouter } from "next/navigation"
 import { onAuthStateChanged, User } from "firebase/auth"
 import { Progress } from "@/components/ui/progress"
@@ -38,6 +38,7 @@ export default function PostPropertyPage() {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
+        console.log("[Client] User authenticated:", currentUser.uid);
       } else {
         toast({ title: "Please login", description: "You need to be logged in to list a property.", variant: "destructive" });
         router.push("/login");
