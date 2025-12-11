@@ -1,4 +1,3 @@
-
 "use client"
 
 import { Button } from "@/components/ui/button"
@@ -7,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
-import { useState, useEffect } from "react"
+import { useState, useEffect, type FormEvent } from "react"
 import Image from "next/image"
 import { Loader2, UploadCloud, X } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
@@ -30,6 +29,7 @@ export default function PostPropertyPage() {
   const { toast } = useToast();
   const router = useRouter();
 
+  // Use simple state for form fields
   const [title, setTitle] = useState('');
   const [propertyType, setPropertyType] = useState('');
   const [listingType, setListingType] = useState('');
@@ -63,6 +63,7 @@ export default function PostPropertyPage() {
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files);
+      console.log("[Client] Files selected:", filesArray);
 
       if (filesArray.length + photos.length > MAX_PHOTOS) {
         toast({
@@ -73,14 +74,17 @@ export default function PostPropertyPage() {
         return;
       }
 
-      const validFiles = filesArray.filter(file => file.size <= MAX_FILE_SIZE_BYTES);
-      if(validFiles.length < filesArray.length) {
-         toast({
-          title: "File too large",
-          description: `One or more files exceeded the ${MAX_FILE_SIZE_MB}MB size limit and were not added.`,
-          variant: "destructive"
-        });
-      }
+      const validFiles = filesArray.filter(file => {
+        if(file.size > MAX_FILE_SIZE_BYTES) {
+            toast({
+              title: "File too large",
+              description: `${file.name} exceeded the ${MAX_FILE_SIZE_MB}MB size limit and was not added.`,
+              variant: "destructive"
+            });
+            return false;
+        }
+        return true;
+      });
 
       setPhotos(prev => [...prev, ...validFiles]);
       const newPreviews = validFiles.map(file => URL.createObjectURL(file));
@@ -93,7 +97,7 @@ export default function PostPropertyPage() {
     setPhotoPreviews(prev => prev.filter((_, i) => i !== index));
   }
   
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (!user) {
@@ -119,7 +123,9 @@ export default function PostPropertyPage() {
             formData.append("files", file);
         });
 
-        console.log("Uploading files to API route...");
+        console.log("[Client] Uploading files to API route...");
+        setUploadProgress(50); // Set progress to 50% to indicate upload has started
+
         const uploadResponse = await fetch('/api/upload', {
             method: 'POST',
             body: formData,
@@ -127,16 +133,19 @@ export default function PostPropertyPage() {
 
         if (!uploadResponse.ok) {
             const errorData = await uploadResponse.json();
-            throw new Error(errorData.message || 'Image upload failed');
+            throw new Error(errorData.message || 'Image upload failed on the server.');
         }
         
         const { urls: imageUrls } = await uploadResponse.json();
-        console.log("Received image URLs:", imageUrls);
+        console.log("[Client] Received image URLs:", imageUrls);
         setUploadProgress(100);
 
+        if (!imageUrls || imageUrls.length === 0) {
+          throw new Error("Server did not return any image URLs.");
+        }
 
         // Step 2: Save property data with image URLs to Firestore
-        console.log("Saving property to Firestore...");
+        console.log("[Client] Saving property to Firestore with URLs...");
         await addDoc(collection(db, "properties"), {
             title,
             propertyType,
@@ -149,7 +158,7 @@ export default function PostPropertyPage() {
             description,
             photos: imageUrls,
             sellerId: user.uid,
-            sellerName: user.displayName,
+            sellerName: user.displayName || user.email,
             sellerEmail: user.email,
             createdAt: new Date(),
             featured: false,
@@ -163,10 +172,10 @@ export default function PostPropertyPage() {
         router.push("/");
 
     } catch (error) {
-        console.error("Error listing property:", error);
+        console.error("[Client] Error listing property:", error);
         toast({
             title: "Submission Failed",
-            description: (error instanceof Error) ? error.message : "An error occurred. Please try again.",
+            description: (error instanceof Error) ? error.message : "An unexpected error occurred. Please try again.",
             variant: "destructive"
         });
     } finally {
@@ -191,7 +200,6 @@ export default function PostPropertyPage() {
         </CardHeader>
         <form onSubmit={handleSubmit}>
             <CardContent className="space-y-8">
-              {/* Basic Information */}
               <div>
                   <Label htmlFor="title">Property Title</Label>
                   <Input id="title" placeholder="e.g., Beautiful 2BHK Apartment with city view" value={title} onChange={e => setTitle(e.target.value)} required />
@@ -229,7 +237,6 @@ export default function PostPropertyPage() {
                  <div><Label htmlFor="area">Area (in sq. ft.)</Label><Input id="area" type="number" placeholder="e.g., 1200" value={area} onChange={e => setArea(e.target.value)} required/></div>
               </div>
 
-              {/* Property Details */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                  <div><Label htmlFor="bedrooms">Bedrooms</Label><Input id="bedrooms" type="number" min="0" value={bedrooms} onChange={e => setBedrooms(e.target.value)} required/></div>
                  <div><Label htmlFor="bathrooms">Bathrooms</Label><Input id="bathrooms" type="number" min="0" value={bathrooms} onChange={e => setBathrooms(e.target.value)} required/></div>
@@ -237,9 +244,8 @@ export default function PostPropertyPage() {
               <div><Label htmlFor="location">Location / Address</Label><Input id="location" placeholder="Enter full address, landmark, or city" value={location} onChange={e => setLocation(e.target.value)} required/></div>
               <div><Label htmlFor="description">Property Description</Label><Textarea id="description" placeholder="Describe your property in detail..." className="min-h-[120px]" value={description} onChange={e => setDescription(e.target.value)} required/></div>
 
-              {/* Photos */}
                <div>
-                <Label>Property Photos</Label>
+                <Label>Property Photos (Required)</Label>
                   <div className="mt-2">
                     <label htmlFor="photo-upload" className="block border-2 border-dashed border-muted rounded-lg p-6 text-center cursor-pointer hover:border-primary transition-colors">
                         <UploadCloud className="mx-auto h-12 w-12 text-muted-foreground" />
@@ -272,7 +278,7 @@ export default function PostPropertyPage() {
                  {submitting && (
                    <div className="space-y-2">
                        <div className="flex justify-between items-center">
-                           <span className="text-sm font-medium text-primary">Uploading... Please wait.</span>
+                           <span className="text-sm font-medium text-primary">Submitting your property... Please wait.</span>
                            <span className="text-sm font-bold text-primary">{uploadProgress}%</span>
                        </div>
                        <Progress value={uploadProgress} className="w-full h-2" />
@@ -293,5 +299,3 @@ export default function PostPropertyPage() {
     </div>
   )
 }
-
-    
