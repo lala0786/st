@@ -1,23 +1,43 @@
-// src/lib/firebase/client.ts
+// src/lib/firebase.ts
 
-import { initializeApp, getApps, getApp } from "firebase/app";
+import { initializeApp, getApps, getApp, type FirebaseOptions } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 import { getFirestore } from "firebase/firestore";
+import { getAnalytics, isSupported } from "firebase/analytics";
 
-const firebaseConfig = {
+const firebaseConfig: FirebaseOptions = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-// Initialize Firebase for the client side (ensuring it only runs once)
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+// Check if all required keys are present
+export const areAllKeysPresent =
+  firebaseConfig.apiKey &&
+  firebaseConfig.authDomain &&
+  firebaseConfig.projectId &&
+  firebaseConfig.storageBucket &&
+  firebaseConfig.messagingSenderId &&
+  firebaseConfig.appId;
 
-// Export client-side services
-export const auth = getAuth(app);
-export const storage = getStorage(app);
-export const db = getFirestore(app);
+if (!areAllKeysPresent) {
+    console.warn("Firebase configuration is incomplete. Some features like Login, Database, or Storage may not work. Please check your .env.local file.");
+}
+
+// Initialize Firebase for the client side
+const app = !getApps().length && areAllKeysPresent ? initializeApp(firebaseConfig) : (getApps().length > 0 ? getApp() : null);
+
+// Initialize services only if the app was successfully initialized
+export const auth = app ? getAuth(app) : null;
+export const db = app ? getFirestore(app) : null;
+export const storage = app ? getStorage(app) : null;
+
+// Initialize Analytics only on the client side where it's supported
+export const analytics = app && typeof window !== 'undefined' ? 
+  isSupported().then(yes => yes ? getAnalytics(app) : null) :
+  Promise.resolve(null);

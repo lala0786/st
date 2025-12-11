@@ -34,6 +34,7 @@ export default function PostPropertyPage() {
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
 
   useEffect(() => {
+    if (!auth) return;
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
