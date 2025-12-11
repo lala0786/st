@@ -1,5 +1,6 @@
+
 import { Suspense } from 'react';
-import { collection, getDocs, query, where, orderBy, QueryConstraint } from 'firebase/firestore';
+import { collection, getDocs, query, where, orderBy, QueryConstraint, and } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Property } from '@/lib/types';
 import { PropertyCard } from '@/components/property-card';
@@ -17,40 +18,67 @@ async function getFilteredProperties(searchParams: { [key: string]: string | str
     return [];
   }
 
-  const { type, listingType, search } = searchParams;
+  const { type, listingType, search, minPrice, maxPrice, bedrooms } = searchParams;
   const propertiesRef = collection(db, "properties");
-  const queryConstraints: QueryConstraint[] = [];
+  let queryConstraints: QueryConstraint[] = [];
 
+  // Important: Firestore requires an index for compound queries.
+  // If you see an error in the browser console about needing an index,
+  // click the link in the error message to create it automatically in Firebase.
+  
   if (type && typeof type === 'string') {
     queryConstraints.push(where("propertyType", "==", type));
   }
   if (listingType && typeof listingType === 'string') {
     queryConstraints.push(where("listingType", "==", listingType));
   }
-  
-  // Note: Firestore doesn't support full-text search natively on multiple fields.
-  // For a production app, a dedicated search service like Algolia or Elasticsearch is recommended.
-  // This is a basic implementation for demonstration.
-  if (search && typeof search === 'string') {
-     // This is a very basic search, for better results consider a search service
-     // or structuring your data to allow for more complex queries.
+  if (minPrice && typeof minPrice === 'string' && !isNaN(Number(minPrice))) {
+    queryConstraints.push(where("price", ">=", Number(minPrice)));
+  }
+   if (maxPrice && typeof maxPrice === 'string' && !isNaN(Number(maxPrice))) {
+    queryConstraints.push(where("price", "<=", Number(maxPrice)));
+  }
+  if (bedrooms && typeof bedrooms === 'string') {
+    if (bedrooms.includes('+')) {
+      queryConstraints.push(where("bedrooms", ">=", parseInt(bedrooms)));
+    } else {
+      queryConstraints.push(where("bedrooms", "==", Number(bedrooms)));
+    }
   }
   
-  queryConstraints.push(orderBy("createdAt", "desc"));
+  // Order by price if it's part of the filter, otherwise by creation date
+  if (minPrice || maxPrice) {
+    queryConstraints.push(orderBy("price", "asc"));
+  } else {
+    queryConstraints.push(orderBy("createdAt", "desc"));
+  }
 
+  let properties: Property[] = [];
   try {
     const q = query(propertiesRef, ...queryConstraints);
     const querySnapshot = await getDocs(q);
-    const properties: Property[] = [];
+    
     querySnapshot.forEach((doc) => {
       const data = doc.data();
-      properties.push({
+      const property = {
         id: doc.id,
         ...data,
         createdAt: data.createdAt ? { seconds: data.createdAt.seconds, nanoseconds: data.createdAt.nanoseconds } : null
-      } as Property);
+      } as Property;
+
+      // Firestore doesn't support text search, so we filter manually.
+      // For production, use a dedicated search service like Algolia or Typesense.
+      if (search && typeof search === 'string' && search.trim() !== '') {
+          if (property.title.toLowerCase().includes(search.toLowerCase()) || property.location.toLowerCase().includes(search.toLowerCase())) {
+              properties.push(property);
+          }
+      } else {
+          properties.push(property);
+      }
     });
+
     return properties;
+
   } catch (error) {
     console.error("Error fetching filtered properties: ", error);
     return [];
@@ -77,14 +105,15 @@ async function SearchResults({ searchParams }: { searchParams: { [key: string]: 
   const properties = await getFilteredProperties(searchParams);
 
   const getTitle = () => {
-    if (searchParams.type) return `${searchParams.type}s`;
-    if (searchParams.listingType) return `Properties for ${searchParams.listingType}`;
+    if (Object.keys(searchParams).length > 0) {
+        return "Search Results"
+    }
     return 'All Properties';
   }
 
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-bold">Search Results: <span className="text-primary">{getTitle()}</span></h1>
+      <h1 className="text-3xl font-bold">{getTitle()}</h1>
       {properties.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {properties.map((property) => (
