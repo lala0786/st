@@ -21,6 +21,12 @@ const nextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'storage.googleapis.com',
+        port: '',
+        pathname: '/**',
+      }
     ],
   },
   experimental: {
@@ -31,3 +37,5 @@ const nextConfig = {
 };
 
 module.exports = nextConfig;
+
+    

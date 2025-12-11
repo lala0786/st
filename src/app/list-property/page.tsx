@@ -16,6 +16,7 @@ import { onAuthStateChanged, User } from "firebase/auth"
 import { addDoc, collection } from "firebase/firestore"
 import { Progress } from "@/components/ui/progress"
 import { Label } from "@/components/ui/label"
+import { uploadPropertyAction } from "@/actions/property"
 
 const MAX_PHOTOS = 10;
 const MAX_FILE_SIZE_MB = 5;
@@ -29,16 +30,7 @@ export default function PostPropertyPage() {
   const { toast } = useToast();
   const router = useRouter();
 
-  // Use simple state for form fields
-  const [title, setTitle] = useState('');
-  const [propertyType, setPropertyType] = useState('');
-  const [listingType, setListingType] = useState('');
-  const [price, setPrice] = useState('');
-  const [area, setArea] = useState('');
-  const [bedrooms, setBedrooms] = useState('0');
-  const [bathrooms, setBathrooms] = useState('0');
-  const [location, setLocation] = useState('');
-  const [description, setDescription] = useState('');
+  // State for form fields
   const [photos, setPhotos] = useState<File[]>([]);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
 
@@ -99,78 +91,56 @@ export default function PostPropertyPage() {
   
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setSubmitting(true);
+    setUploadProgress(10); // Initial progress
 
     if (!user) {
         toast({ title: "Error", description: "You must be logged in.", variant: "destructive" });
+        setSubmitting(false);
         return;
     }
+
+    const formData = new FormData(e.currentTarget);
+    const formValues = Object.fromEntries(formData.entries());
+
     if (photos.length === 0) {
         toast({ title: "Error", description: "At least one photo is required.", variant: "destructive" });
+        setSubmitting(false);
         return;
     }
-    if (!title || !propertyType || !listingType || !price || !area || !location || !description) {
+     if (!formValues.title || !formValues.propertyType || !formValues.listingType || !formValues.price || !formValues.area || !formValues.location || !formValues.description) {
         toast({ title: "Error", description: "Please fill out all required fields.", variant: "destructive" });
+        setSubmitting(false);
         return;
     }
 
-    setSubmitting(true);
-    setUploadProgress(0);
-
+    // Append files to FormData
+    photos.forEach(file => {
+        formData.append("files", file);
+    });
+    
     try {
-        // Step 1: Upload images to the server via API route
-        const formData = new FormData();
-        photos.forEach(file => {
-            formData.append("files", file);
-        });
-
-        console.log("[Client] Uploading files to API route...");
-        setUploadProgress(50); // Set progress to 50% to indicate upload has started
-
-        const uploadResponse = await fetch('/api/upload', {
-            method: 'POST',
-            body: formData,
-        });
-
-        if (!uploadResponse.ok) {
-            const errorData = await uploadResponse.json();
-            throw new Error(errorData.message || 'Image upload failed on the server.');
-        }
+        setUploadProgress(30);
+        console.log("[Client] Getting ID token...");
+        const idToken = await user.getIdToken();
+        formData.append('idToken', idToken);
+        console.log("[Client] Token retrieved. Calling server action...");
         
-        const { urls: imageUrls } = await uploadResponse.json();
-        console.log("[Client] Received image URLs:", imageUrls);
+        setUploadProgress(50);
+        const result = await uploadPropertyAction(formData);
         setUploadProgress(100);
 
-        if (!imageUrls || imageUrls.length === 0) {
-          throw new Error("Server did not return any image URLs.");
+        if (result.success && result.propertyId) {
+            console.log("[Client] Server action successful. Property ID:", result.propertyId);
+            toast({
+                title: "Property Listed!",
+                description: "Your property has been successfully submitted.",
+            });
+            router.push(`/listing/${result.propertyId}`);
+        } else {
+            console.error("[Client] Server action failed:", result.error);
+            throw new Error(result.error || "An unknown error occurred on the server.");
         }
-
-        // Step 2: Save property data with image URLs to Firestore
-        console.log("[Client] Saving property to Firestore with URLs...", imageUrls);
-        await addDoc(collection(db, "properties"), {
-            title,
-            propertyType,
-            listingType,
-            price: Number(price),
-            area: Number(area),
-            bedrooms: Number(bedrooms),
-            bathrooms: Number(bathrooms),
-            location,
-            description,
-            photos: imageUrls,
-            sellerId: user.uid,
-            sellerName: user.displayName || user.email,
-            sellerEmail: user.email,
-            createdAt: new Date(),
-            featured: false,
-        });
-
-        toast({
-            title: "Property Listed!",
-            description: "Your property has been successfully submitted.",
-        });
-        
-        router.push("/");
-
     } catch (error) {
         console.error("[Client] Error listing property:", error);
         toast({
@@ -202,13 +172,13 @@ export default function PostPropertyPage() {
             <CardContent className="space-y-8">
               <div>
                   <Label htmlFor="title">Property Title</Label>
-                  <Input id="title" placeholder="e.g., Beautiful 2BHK Apartment with city view" value={title} onChange={e => setTitle(e.target.value)} required />
+                  <Input id="title" name="title" placeholder="e.g., Beautiful 2BHK Apartment with city view" required />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
                   <Label>Property Type</Label>
-                  <Select onValueChange={setPropertyType} value={propertyType} required>
+                  <Select name="propertyType" required>
                     <SelectTrigger><SelectValue placeholder="Select a property type" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Apartment">Apartment / Flat</SelectItem>
@@ -220,7 +190,7 @@ export default function PostPropertyPage() {
                 </div>
                 <div>
                   <Label>Listing For</Label>
-                  <RadioGroup onValueChange={setListingType} value={listingType} className="flex items-center gap-6 pt-2">
+                  <RadioGroup name="listingType" defaultValue="Sell" className="flex items-center gap-6 pt-2">
                       <div className="flex items-center space-x-2 space-y-0">
                         <RadioGroupItem value="Sell" id="sell"/>
                         <Label htmlFor="sell" className="font-normal">Sale</Label>
@@ -233,16 +203,16 @@ export default function PostPropertyPage() {
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                 <div><Label htmlFor="price">Price (in ₹)</Label><Input id="price" type="number" placeholder="e.g., 4500000" value={price} onChange={e => setPrice(e.target.value)} required /></div>
-                 <div><Label htmlFor="area">Area (in sq. ft.)</Label><Input id="area" type="number" placeholder="e.g., 1200" value={area} onChange={e => setArea(e.target.value)} required/></div>
+                 <div><Label htmlFor="price">Price (in ₹)</Label><Input id="price" name="price" type="number" placeholder="e.g., 4500000" required /></div>
+                 <div><Label htmlFor="area">Area (in sq. ft.)</Label><Input id="area" name="area" type="number" placeholder="e.g., 1200" required/></div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                 <div><Label htmlFor="bedrooms">Bedrooms</Label><Input id="bedrooms" type="number" min="0" value={bedrooms} onChange={e => setBedrooms(e.target.value)} required/></div>
-                 <div><Label htmlFor="bathrooms">Bathrooms</Label><Input id="bathrooms" type="number" min="0" value={bathrooms} onChange={e => setBathrooms(e.target.value)} required/></div>
+                 <div><Label htmlFor="bedrooms">Bedrooms</Label><Input id="bedrooms" name="bedrooms" type="number" min="0" defaultValue="0" required/></div>
+                 <div><Label htmlFor="bathrooms">Bathrooms</Label><Input id="bathrooms" name="bathrooms" type="number" min="0" defaultValue="0" required/></div>
               </div>
-              <div><Label htmlFor="location">Location / Address</Label><Input id="location" placeholder="Enter full address, landmark, or city" value={location} onChange={e => setLocation(e.target.value)} required/></div>
-              <div><Label htmlFor="description">Property Description</Label><Textarea id="description" placeholder="Describe your property in detail..." className="min-h-[120px]" value={description} onChange={e => setDescription(e.target.value)} required/></div>
+              <div><Label htmlFor="location">Location / Address</Label><Input id="location" name="location" placeholder="Enter full address, landmark, or city" required/></div>
+              <div><Label htmlFor="description">Property Description</Label><Textarea id="description" name="description" placeholder="Describe your property in detail..." className="min-h-[120px]" required/></div>
 
                <div>
                 <Label>Property Photos (Required)</Label>
@@ -299,3 +269,5 @@ export default function PostPropertyPage() {
     </div>
   )
 }
+
+    

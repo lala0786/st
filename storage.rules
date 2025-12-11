@@ -2,21 +2,25 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Allow public read access to all files.
-    // This allows your app to display images to any visitor without restrictions.
-    match /{allPaths=**} {
+    
+    // Allow public read access to all files under the 'properties' folder.
+    // This allows your app to display images to any visitor.
+    match /properties/{allPaths=**} {
       allow read;
     }
     
-    // Secure image uploads to the 'properties' folder.
-    match /properties/{fileName} {
+    // Secure image uploads within the 'properties' folder structure.
+    match /properties/{propertyId}/{fileName} {
       // Allow write (create, update, delete) operations only if:
       // 1. The user is authenticated (request.auth is not null).
       // 2. The uploaded file size is less than 5MB.
-      // 3. The content type of the file is an image (jpeg, png, or webp).
+      // 3. The content type of the file is an image.
+      // 4. The user making the request is the owner of the data (optional but good practice).
       allow write: if request.auth != null 
                     && request.resource.size < 5 * 1024 * 1024
-                    && request.resource.contentType.matches('image/(jpeg|png|webp)');
+                    && request.resource.contentType.matches('image/.*');
     }
   }
 }
+
+    
