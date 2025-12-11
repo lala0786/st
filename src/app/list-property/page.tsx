@@ -1,11 +1,7 @@
 
 "use client"
 
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
 import { Button } from "@/components/ui/button"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
@@ -13,46 +9,38 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { Loader2, UploadCloud } from "lucide-react"
+import { Loader2, UploadCloud, X } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { auth, db, storage } from "@/lib/firebase"
+import { auth, db } from "@/lib/firebase"
 import { useRouter } from "next/navigation"
 import { onAuthStateChanged, User } from "firebase/auth"
 import { addDoc, collection } from "firebase/firestore"
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage"
 import { Progress } from "@/components/ui/progress"
+import { Label } from "@/components/ui/label"
 
 const MAX_PHOTOS = 10;
 const MAX_FILE_SIZE_MB = 5;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
-const formSchema = z.object({
-  title: z.string().min(10, "Title must be at least 10 characters.").max(100),
-  propertyType: z.enum(["Apartment", "House", "Plot", "Shop"], { required_error: "Please select a property type." }),
-  listingType: z.enum(["Sell", "Rent"], { required_error: "Please select a listing type." }),
-  price: z.coerce.number().min(1, "Price must be a positive number."),
-  area: z.coerce.number().min(1, "Area must be a positive number."),
-  bedrooms: z.coerce.number().min(0, "Bedrooms cannot be negative.").max(20),
-  bathrooms: z.coerce.number().min(0, "Bathrooms cannot be negative.").max(20),
-  location: z.string().min(5, "Location is required. Please be specific."),
-  description: z.string().min(20, "Description must be at least 20 characters.").max(1000),
-  photos: z.instanceof(FileList)
-    .refine((files) => files?.length > 0, "At least one photo is required.")
-    .refine((files) => files?.length <= MAX_PHOTOS, `You can upload a maximum of ${MAX_PHOTOS} photos.`)
-    .refine((files) => Array.from(files).every((file) => file.size <= MAX_FILE_SIZE_BYTES), `Each file must be less than ${MAX_FILE_SIZE_MB}MB.`),
-})
-
-type FormValues = z.infer<typeof formSchema>;
-
 export default function PostPropertyPage() {
   const [user, setUser] = useState<User | null>(null);
-  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingUser, setLoadingUser] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [submissionStatus, setSubmissionStatus] = useState<string>('');
   const { toast } = useToast();
   const router = useRouter();
+
+  const [title, setTitle] = useState('');
+  const [propertyType, setPropertyType] = useState('');
+  const [listingType, setListingType] = useState('');
+  const [price, setPrice] = useState('');
+  const [area, setArea] = useState('');
+  const [bedrooms, setBedrooms] = useState('0');
+  const [bathrooms, setBathrooms] = useState('0');
+  const [location, setLocation] = useState('');
+  const [description, setDescription] = useState('');
+  const [photos, setPhotos] = useState<File[]>([]);
+  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
 
   useEffect(() => {
     if (!auth) {
@@ -66,78 +54,99 @@ export default function PostPropertyPage() {
         toast({ title: "Please login", description: "You need to be logged in to list a property.", variant: "destructive" });
         router.push("/login");
       }
-      setLoading(false);
+      setLoadingUser(false);
     });
     return () => unsubscribe();
   }, [router, toast]);
 
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      bedrooms: 0,
-      bathrooms: 0,
-      title: "",
-      location: "",
-      description: "",
-    },
-     mode: "onBlur"
-  })
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const filesArray = Array.from(e.target.files);
 
-  const uploadPhotos = async (photos: FileList): Promise<string[]> => {
-    setSubmissionStatus('Uploading images...');
-    setUploadProgress(0);
-
-    const photoFiles = Array.from(photos);
-    const uploadPromises = photoFiles.map(file => {
-        return new Promise<string>((resolve, reject) => {
-            if (!user) return reject(new Error("User not logged in."));
-            
-            const photoRef = ref(storage, `properties/${user.uid}/${Date.now()}-${file.name}`);
-            const uploadTask = uploadBytesResumable(photoRef, file);
-
-            uploadTask.on('state_changed',
-                (snapshot) => {
-                    // This logic can be expanded to show more granular progress
-                },
-                (error) => {
-                    console.error(`Upload failed for ${file.name}:`, error);
-                    reject(new Error(`Failed to upload ${file.name}.`));
-                },
-                async () => {
-                    try {
-                        const url = await getDownloadURL(uploadTask.snapshot.ref);
-                        resolve(url);
-                    } catch (error) {
-                        reject(new Error(`Failed to get URL for ${file.name}.`));
-                    }
-                }
-            );
+      if (filesArray.length + photos.length > MAX_PHOTOS) {
+        toast({
+          title: "Too many photos",
+          description: `You can upload a maximum of ${MAX_PHOTOS} photos.`,
+          variant: "destructive"
         });
-    });
+        return;
+      }
 
-    // We can track overall progress, but for simplicity, let's just wait for all
-    // A more complex implementation could update progress based on each promise
-    const urls = await Promise.all(uploadPromises);
-    setUploadProgress(100);
-    setSubmissionStatus('Finalizing...');
-    return urls;
-};
+      const validFiles = filesArray.filter(file => file.size <= MAX_FILE_SIZE_BYTES);
+      if(validFiles.length < filesArray.length) {
+         toast({
+          title: "File too large",
+          description: `One or more files exceeded the ${MAX_FILE_SIZE_MB}MB size limit and were not added.`,
+          variant: "destructive"
+        });
+      }
+
+      setPhotos(prev => [...prev, ...validFiles]);
+      const newPreviews = validFiles.map(file => URL.createObjectURL(file));
+      setPhotoPreviews(prev => [...prev, ...newPreviews]);
+    }
+  };
+
+  const removePhoto = (index: number) => {
+    setPhotos(prev => prev.filter((_, i) => i !== index));
+    setPhotoPreviews(prev => prev.filter((_, i) => i !== index));
+  }
   
-  const processForm = async (values: FormValues) => {
-     if (!db || !user) {
-        toast({ title: "Error", description: "Could not connect to the database.", variant: "destructive" });
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (!user) {
+        toast({ title: "Error", description: "You must be logged in.", variant: "destructive" });
         return;
     }
+    if (photos.length === 0) {
+        toast({ title: "Error", description: "At least one photo is required.", variant: "destructive" });
+        return;
+    }
+    if (!title || !propertyType || !listingType || !price || !area || !location || !description) {
+        toast({ title: "Error", description: "Please fill out all required fields.", variant: "destructive" });
+        return;
+    }
+
     setSubmitting(true);
-    
+    setUploadProgress(0);
+
     try {
-        const imageUrls = await uploadPhotos(values.photos);
+        // Step 1: Upload images to the server via API route
+        const formData = new FormData();
+        photos.forEach(file => {
+            formData.append("files", file);
+        });
 
-        const { photos, ...formData } = values;
+        console.log("Uploading files to API route...");
+        const uploadResponse = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData,
+        });
 
+        if (!uploadResponse.ok) {
+            const errorData = await uploadResponse.json();
+            throw new Error(errorData.message || 'Image upload failed');
+        }
+        
+        const { urls: imageUrls } = await uploadResponse.json();
+        console.log("Received image URLs:", imageUrls);
+        setUploadProgress(100);
+
+
+        // Step 2: Save property data with image URLs to Firestore
+        console.log("Saving property to Firestore...");
         await addDoc(collection(db, "properties"), {
-            ...formData,
+            title,
+            propertyType,
+            listingType,
+            price: Number(price),
+            area: Number(area),
+            bedrooms: Number(bedrooms),
+            bathrooms: Number(bathrooms),
+            location,
+            description,
             photos: imageUrls,
             sellerId: user.uid,
             sellerName: user.displayName,
@@ -162,34 +171,10 @@ export default function PostPropertyPage() {
         });
     } finally {
         setSubmitting(false);
-        setUploadProgress(0);
-        setSubmissionStatus('');
     }
   }
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files) {
-      // Validate file count on change
-      if (files.length > MAX_PHOTOS) {
-        toast({
-          title: "Too many photos",
-          description: `You can upload a maximum of ${MAX_PHOTOS} photos.`,
-          variant: "destructive"
-        })
-        e.target.value = ""; // Reset file input
-        setPhotoPreviews([]);
-        form.resetField("photos");
-        return;
-      }
-      
-      const newPreviews = Array.from(files).map(file => URL.createObjectURL(file));
-      setPhotoPreviews(newPreviews);
-      form.setValue("photos", files, { shouldValidate: true });
-    }
-  };
-  
-  if (loading) {
+  if (loadingUser) {
     return (
       <div className="container mx-auto flex justify-center py-12">
         <Loader2 className="h-16 w-16 animate-spin text-primary" />
@@ -204,140 +189,90 @@ export default function PostPropertyPage() {
           <CardTitle className="text-3xl">Post a new Property</CardTitle>
           <CardDescription>Fill in the details below to list your property.</CardDescription>
         </CardHeader>
-         <Form {...form}>
-          <form onSubmit={form.handleSubmit(processForm)}>
+        <form onSubmit={handleSubmit}>
             <CardContent className="space-y-8">
               {/* Basic Information */}
-              <FormField
-                  control={form.control}
-                  name="title"
-                  render={({ field }) => (
-                  <FormItem>
-                      <FormLabel>Property Title</FormLabel>
-                      <FormControl>
-                      <Input placeholder="e.g., Beautiful 2BHK Apartment with city view" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                  </FormItem>
-                  )}
-              />
+              <div>
+                  <Label htmlFor="title">Property Title</Label>
+                  <Input id="title" placeholder="e.g., Beautiful 2BHK Apartment with city view" value={title} onChange={e => setTitle(e.target.value)} required />
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <FormField
-                  control={form.control}
-                  name="propertyType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Property Type</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger><SelectValue placeholder="Select a property type" /></SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Apartment">Apartment / Flat</SelectItem>
-                          <SelectItem value="House">House / Villa</SelectItem>
-                          <SelectItem value="Plot">Plot</SelectItem>
-                          <SelectItem value="Shop">Commercial Shop</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="listingType"
-                  render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel>Listing For</FormLabel>
-                      <FormControl>
-                        <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex items-center gap-6">
-                          <FormItem className="flex items-center space-x-2 space-y-0">
-                            <FormControl><RadioGroupItem value="Sell" /></FormControl>
-                            <FormLabel className="font-normal">Sale</FormLabel>
-                          </FormItem>
-                          <FormItem className="flex items-center space-x-2 space-y-0">
-                            <FormControl><RadioGroupItem value="Rent" /></FormControl>
-                            <FormLabel className="font-normal">Rent</FormLabel>
-                          </FormItem>
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div>
+                  <Label>Property Type</Label>
+                  <Select onValueChange={setPropertyType} value={propertyType} required>
+                    <SelectTrigger><SelectValue placeholder="Select a property type" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Apartment">Apartment / Flat</SelectItem>
+                      <SelectItem value="House">House / Villa</SelectItem>
+                      <SelectItem value="Plot">Plot</SelectItem>
+                      <SelectItem value="Shop">Commercial Shop</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Listing For</Label>
+                  <RadioGroup onValueChange={setListingType} value={listingType} className="flex items-center gap-6 pt-2">
+                      <div className="flex items-center space-x-2 space-y-0">
+                        <RadioGroupItem value="Sell" id="sell"/>
+                        <Label htmlFor="sell" className="font-normal">Sale</Label>
+                      </div>
+                      <div className="flex items-center space-x-2 space-y-0">
+                        <RadioGroupItem value="Rent" id="rent"/>
+                        <Label htmlFor="rent" className="font-normal">Rent</Label>
+                      </div>
+                  </RadioGroup>
+                </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <FormField control={form.control} name="price" render={({ field }) => (
-                    <FormItem><FormLabel>Price (in ₹)</FormLabel><FormControl><Input type="number" placeholder="e.g., 4500000" {...field} /></FormControl><FormMessage /></FormItem>
-                  )} />
-                <FormField control={form.control} name="area" render={({ field }) => (
-                    <FormItem><FormLabel>Area (in sq. ft.)</FormLabel><FormControl><Input type="number" placeholder="e.g., 1200" {...field} /></FormControl><FormMessage /></FormItem>
-                  )} />
+                 <div><Label htmlFor="price">Price (in ₹)</Label><Input id="price" type="number" placeholder="e.g., 4500000" value={price} onChange={e => setPrice(e.target.value)} required /></div>
+                 <div><Label htmlFor="area">Area (in sq. ft.)</Label><Input id="area" type="number" placeholder="e.g., 1200" value={area} onChange={e => setArea(e.target.value)} required/></div>
               </div>
 
               {/* Property Details */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <FormField control={form.control} name="bedrooms" render={({ field }) => (
-                    <FormItem><FormLabel>Bedrooms</FormLabel><FormControl><Input type="number" min="0" {...field} /></FormControl><FormMessage /></FormItem>
-                  )} />
-                <FormField control={form.control} name="bathrooms" render={({ field }) => (
-                    <FormItem><FormLabel>Bathrooms</FormLabel><FormControl><Input type="number" min="0" {...field} /></FormControl><FormMessage /></FormItem>
-                  )} />
+                 <div><Label htmlFor="bedrooms">Bedrooms</Label><Input id="bedrooms" type="number" min="0" value={bedrooms} onChange={e => setBedrooms(e.target.value)} required/></div>
+                 <div><Label htmlFor="bathrooms">Bathrooms</Label><Input id="bathrooms" type="number" min="0" value={bathrooms} onChange={e => setBathrooms(e.target.value)} required/></div>
               </div>
-              <FormField control={form.control} name="location" render={({ field }) => (
-                  <FormItem><FormLabel>Location / Address</FormLabel><FormControl><Input placeholder="Enter full address, landmark, or city" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-              <FormField control={form.control} name="description" render={({ field }) => (
-                  <FormItem><FormLabel>Property Description</FormLabel><FormControl><Textarea placeholder="Describe your property in detail..." className="min-h-[120px]" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
+              <div><Label htmlFor="location">Location / Address</Label><Input id="location" placeholder="Enter full address, landmark, or city" value={location} onChange={e => setLocation(e.target.value)} required/></div>
+              <div><Label htmlFor="description">Property Description</Label><Textarea id="description" placeholder="Describe your property in detail..." className="min-h-[120px]" value={description} onChange={e => setDescription(e.target.value)} required/></div>
 
               {/* Photos */}
-               <FormField
-                control={form.control}
-                name="photos"
-                render={() => (
-                  <FormItem>
-                    <FormLabel>Property Photos</FormLabel>
-                      <FormControl>
-                        <label htmlFor="photo-upload" className="block border-2 border-dashed border-muted rounded-lg p-6 text-center cursor-pointer hover:border-primary transition-colors">
-                            {photoPreviews.length > 0 ? (
-                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-                                    {photoPreviews.map((src, index) => (
-                                        <div key={index} className="relative aspect-square">
-                                            <Image src={src} alt={`Preview ${index + 1}`} fill className="object-cover rounded-md" />
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <>
-                                    <UploadCloud className="mx-auto h-12 w-12 text-muted-foreground" />
-                                    <p className="mt-2 text-sm text-muted-foreground">
-                                    <span className="font-semibold text-primary">Click to upload</span> or drag and drop
-                                    </p>
-                                    <p className="text-xs text-muted-foreground">Up to {MAX_PHOTOS} photos (PNG, JPG, max {MAX_FILE_SIZE_MB}MB each)</p>
-                                </>
-                            )}
-                            <Input 
-                                id="photo-upload" 
-                                type="file" 
-                                className="hidden" 
-                                multiple 
-                                disabled={submitting}
-                                {...form.register("photos")}
-                                onChange={handlePhotoChange}
-                                accept="image/png, image/jpeg, image/webp"
-                            />
-                        </label>
-                    </FormControl>
-                    <FormDescription>Good photos attract more buyers. Upload clear, bright pictures.</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-                />
+               <div>
+                <Label>Property Photos</Label>
+                  <div className="mt-2">
+                    <label htmlFor="photo-upload" className="block border-2 border-dashed border-muted rounded-lg p-6 text-center cursor-pointer hover:border-primary transition-colors">
+                        <UploadCloud className="mx-auto h-12 w-12 text-muted-foreground" />
+                        <p className="mt-2 text-sm text-muted-foreground">
+                        <span className="font-semibold text-primary">Click to upload</span> or drag and drop
+                        </p>
+                        <p className="text-xs text-muted-foreground">Up to {MAX_PHOTOS} photos (PNG, JPG, max {MAX_FILE_SIZE_MB}MB each)</p>
+                        <Input 
+                            id="photo-upload" 
+                            type="file" 
+                            className="hidden" 
+                            multiple 
+                            disabled={submitting}
+                            onChange={handlePhotoChange}
+                            accept="image/png, image/jpeg, image/webp"
+                        />
+                    </label>
+                  </div>
+                <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                    {photoPreviews.map((src, index) => (
+                        <div key={index} className="relative aspect-square">
+                            <Image src={src} alt={`Preview ${index + 1}`} fill className="object-cover rounded-md" />
+                            <button type="button" onClick={() => removePhoto(index)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 h-6 w-6 flex items-center justify-center">
+                                <X className="h-4 w-4" />
+                            </button>
+                        </div>
+                    ))}
+                </div>
+               </div>
                  {submitting && (
                    <div className="space-y-2">
                        <div className="flex justify-between items-center">
-                           <span className="text-sm font-medium text-primary">{submissionStatus}</span>
+                           <span className="text-sm font-medium text-primary">Uploading... Please wait.</span>
                            <span className="text-sm font-bold text-primary">{uploadProgress}%</span>
                        </div>
                        <Progress value={uploadProgress} className="w-full h-2" />
@@ -347,14 +282,13 @@ export default function PostPropertyPage() {
             <CardFooter>
               <Button type="submit" disabled={submitting} className="w-full">
                 {submitting ? (
-                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {submissionStatus || 'Submitting...'}</>
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting...</>
                 ) : (
                     'Submit Property'
                 )}
               </Button>
             </CardFooter>
           </form>
-        </Form>
       </Card>
     </div>
   )

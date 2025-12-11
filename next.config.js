@@ -15,8 +15,21 @@ const nextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'firebasestorage.googleapis.com',
+        port: '',
+        pathname: '/**',
+      },
     ],
+  },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '10mb', // Increase body size limit for file uploads
+    },
   },
 };
 
 module.exports = nextConfig;
+
+    
