@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useForm } from "react-hook-form"
@@ -83,60 +84,45 @@ export default function PostPropertyPage() {
      mode: "onBlur"
   })
 
-  const uploadPhotos = (photos: FileList): Promise<string[]> => {
-    return new Promise((resolve, reject) => {
-        if (!storage || !user) {
-            return reject(new Error("Firebase not configured or user not logged in."));
-        }
+  const uploadPhotos = async (photos: FileList): Promise<string[]> => {
+    setSubmissionStatus('Uploading images...');
+    setUploadProgress(0);
 
-        const photoFiles = Array.from(photos);
-        const downloadUrls: string[] = [];
-        let filesUploaded = 0;
-        let totalProgress = 0;
-
-        setSubmissionStatus('Uploading images...');
-        setUploadProgress(0);
-
-        if (photoFiles.length === 0) {
-            return resolve([]);
-        }
-
-        photoFiles.forEach((file, index) => {
+    const photoFiles = Array.from(photos);
+    const uploadPromises = photoFiles.map(file => {
+        return new Promise<string>((resolve, reject) => {
+            if (!user) return reject(new Error("User not logged in."));
+            
             const photoRef = ref(storage, `properties/${user.uid}/${Date.now()}-${file.name}`);
             const uploadTask = uploadBytesResumable(photoRef, file);
 
             uploadTask.on('state_changed',
                 (snapshot) => {
-                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                    // This logic can be improved to show per-file progress if needed
-                    // For now, we update total progress once a file is done.
+                    // This logic can be expanded to show more granular progress
                 },
                 (error) => {
                     console.error(`Upload failed for ${file.name}:`, error);
-                    // Rejecting on first error
-                    reject(new Error(`Failed to upload ${file.name}. Please try again.`));
+                    reject(new Error(`Failed to upload ${file.name}.`));
                 },
                 async () => {
                     try {
                         const url = await getDownloadURL(uploadTask.snapshot.ref);
-                        downloadUrls.push(url);
-                        filesUploaded++;
-                        totalProgress = (filesUploaded / photoFiles.length) * 100;
-                        setUploadProgress(Math.round(totalProgress));
-                        setSubmissionStatus(`Uploading... (${filesUploaded}/${photoFiles.length})`);
-
-                        if (filesUploaded === photoFiles.length) {
-                            resolve(downloadUrls);
-                        }
+                        resolve(url);
                     } catch (error) {
-                        console.error(`Failed to get download URL for ${file.name}:`, error);
                         reject(new Error(`Failed to get URL for ${file.name}.`));
                     }
                 }
             );
         });
     });
-  };
+
+    // We can track overall progress, but for simplicity, let's just wait for all
+    // A more complex implementation could update progress based on each promise
+    const urls = await Promise.all(uploadPromises);
+    setUploadProgress(100);
+    setSubmissionStatus('Finalizing...');
+    return urls;
+};
   
   const processForm = async (values: FormValues) => {
      if (!db || !user) {
@@ -144,15 +130,9 @@ export default function PostPropertyPage() {
         return;
     }
     setSubmitting(true);
-    console.log("Form submitted with values: ", values);
     
     try {
-        console.log("Starting photo upload...");
         const imageUrls = await uploadPhotos(values.photos);
-        console.log("Photo upload complete. URLs: ", imageUrls);
-
-        setSubmissionStatus('Finalizing...');
-        setUploadProgress(100);
 
         const { photos, ...formData } = values;
 
@@ -365,7 +345,7 @@ export default function PostPropertyPage() {
                  )}
             </CardContent>
             <CardFooter>
-              <Button type="submit" disabled={submitting || !form.formState.isValid} className="w-full">
+              <Button type="submit" disabled={submitting} className="w-full">
                 {submitting ? (
                     <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {submissionStatus || 'Submitting...'}</>
                 ) : (
@@ -379,3 +359,5 @@ export default function PostPropertyPage() {
     </div>
   )
 }
+
+    
