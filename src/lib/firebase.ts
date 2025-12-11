@@ -25,12 +25,14 @@ export const areAllKeysPresent =
   firebaseConfig.messagingSenderId &&
   firebaseConfig.appId;
 
-if (!areAllKeysPresent) {
-    console.warn("Firebase configuration is incomplete. Some features like Login, Database, or Storage may not work. Please check your .env.local file.");
+let app;
+if (areAllKeysPresent) {
+    app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+} else {
+    console.warn("Firebase configuration is incomplete. Some features like Login, Database, or Storage may not work. Please check your environment variables.");
+    app = null;
 }
 
-// Initialize Firebase for the client side
-const app = !getApps().length && areAllKeysPresent ? initializeApp(firebaseConfig) : (getApps().length > 0 ? getApp() : null);
 
 // Initialize services only if the app was successfully initialized
 export const auth = app ? getAuth(app) : null;
