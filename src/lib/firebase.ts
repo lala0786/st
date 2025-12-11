@@ -15,7 +15,7 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-// A check to see if all the necessary keys are present in the environment variables.
+// यह जाँचने के लिए कि क्या सभी आवश्यक कुंजियाँ पर्यावरण चर में मौजूद हैं।
 export const areAllKeysPresent = 
     !!firebaseConfig.apiKey &&
     !!firebaseConfig.authDomain &&
@@ -30,7 +30,7 @@ let analytics: Promise<Analytics | null> | null = null;
 let db: Firestore;
 let storage: FirebaseStorage;
 
-// Initialize Firebase only if all the keys are present and we are not in a server environment where it might have been already initialized.
+// Firebase को केवल तभी प्रारंभ करें जब सभी कुंजियाँ मौजूद हों और हम ऐसे सर्वर वातावरण में न हों जहाँ यह पहले से ही प्रारंभ हो चुका हो सकता है।
 if (areAllKeysPresent) {
     if (getApps().length === 0) {
         app = initializeApp(firebaseConfig);
@@ -44,12 +44,12 @@ if (areAllKeysPresent) {
         analytics = isSupported().then(yes => (yes ? getAnalytics(app) : null));
     }
 } else {
-    // If the keys are not present, we log a warning to the console.
-    // The app will continue to run, but Firebase features will be disabled.
+    // यदि कुंजियाँ मौजूद नहीं हैं, तो हम कंसोल पर एक चेतावनी लॉग करते हैं।
+    // ऐप चलता रहेगा, लेकिन Firebase सुविधाएँ अक्षम हो जाएँगी।
     if (process.env.NODE_ENV !== 'production') {
-        console.warn("Firebase configuration keys are missing or incomplete. Firebase features will be disabled. Please create a .env.local file with the necessary keys.");
+        console.warn("Firebase कॉन्फ़िगरेशन कुंजियाँ गुम या अधूरी हैं। Firebase सुविधाएँ अक्षम हो जाएँगी। कृपया आवश्यक कुंजियों के साथ एक .env.local फ़ाइल बनाएँ।");
     }
-    // Provide dummy objects to prevent crashes if code tries to access them
+    // यदि कोड उन्हें एक्सेस करने का प्रयास करता है तो क्रैश को रोकने के लिए डमी ऑब्जेक्ट प्रदान करें
     app = {} as FirebaseApp;
     auth = {} as Auth;
     db = {} as Firestore;
