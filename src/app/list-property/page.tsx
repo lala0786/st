@@ -145,7 +145,7 @@ export default function PostPropertyPage() {
         }
 
         // Step 2: Save property data with image URLs to Firestore
-        console.log("[Client] Saving property to Firestore with URLs...");
+        console.log("[Client] Saving property to Firestore with URLs...", imageUrls);
         await addDoc(collection(db, "properties"), {
             title,
             propertyType,
