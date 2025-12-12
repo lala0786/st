@@ -1,3 +1,4 @@
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   /* config options here */
@@ -37,7 +38,7 @@ const nextConfig = {
   },
   experimental: {
     serverActions: {
-      bodySizeLimit: '10mb', // Increase body size limit for file uploads
+      bodySizeLimit: '12mb', // फ़ाइल अपलोड के लिए बॉडी आकार की सीमा बढ़ाएँ (10MB + बफर)
     },
   },
 };

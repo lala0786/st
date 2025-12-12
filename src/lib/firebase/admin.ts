@@ -1,36 +1,37 @@
+
 // src/lib/firebase/admin.ts
 
 import * as admin from 'firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 
-// 1. Construct the Service Account object from environment variables
+// 1. पर्यावरण चर से सेवा खाता ऑब्जेक्ट बनाएँ
 const serviceAccount = {
   projectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
   clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
-  // Replace escaped newlines (\n) with actual newlines
+  // एस्केप किए गए न्यूलाइन (\n) को वास्तविक न्यूलाइन से बदलें
   privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, '\n'), 
 };
 
-// 2. Check for required environment variables
+// 2. आवश्यक पर्यावरण चर की जाँच करें
 if (!serviceAccount.projectId || !serviceAccount.clientEmail || !serviceAccount.privateKey) {
-  // Log a clear error if credentials are missing
-  console.error("FATAL: Firebase Admin credentials missing. Check FIREBASE_ADMIN_PROJECT_ID, FIREBASE_ADMIN_CLIENT_EMAIL, and FIREBASE_ADMIN_PRIVATE_KEY in your environment variables.");
+  // यदि क्रेडेंशियल गुम हैं तो एक स्पष्ट त्रुटि लॉग करें
+  console.error("FATAL: Firebase एडमिन क्रेडेंशियल गुम हैं। अपने पर्यावरण चर में FIREBASE_ADMIN_PROJECT_ID, FIREBASE_ADMIN_CLIENT_EMAIL, और FIREBASE_ADMIN_PRIVATE_KEY की जाँच करें।");
 }
 
-// 3. Initialize the Admin SDK if it hasn't been already
+// 3. यदि एडमिन SDK पहले से प्रारंभ नहीं किया गया है तो इसे प्रारंभ करें
 if (!admin.apps.length) {
   try {
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
       storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
     });
-     console.log("Firebase Admin SDK initialized successfully.");
+     console.log("Firebase एडमिन SDK सफलतापूर्वक प्रारंभ हो गया।");
   } catch (error) {
-     console.error("Firebase Admin SDK initialization failed:", error);
+     console.error("Firebase एडमिन SDK प्रारंभ करने में विफल:", error);
   }
 }
 
-// Export server-side services
+// सर्वर-साइड सेवाओं का निर्यात करें
 export const adminAuth = admin.auth();
 export const adminStorage = admin.storage();
 export const adminDb = admin.firestore();
