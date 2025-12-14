@@ -40,21 +40,21 @@ const interiorDesignerFlow = ai.defineFlow(
     outputSchema: InteriorDesignerOutputSchema,
   },
   async (input) => {
-    const {media} = await ai.generate({
+    const result = await ai.generate({
         model: 'googleai/gemini-2.5-flash-image-preview',
         prompt: [
           {media: {url: input.photoDataUri}},
-          {text: `You are an expert interior designer. Redesign this room in a ${input.style} style. Follow these instructions: ${input.prompt}. Only output the redesigned image, do not output any text.`},
+          {text: `You are an expert interior designer. Redesign this room in a ${input.style} style. Follow these instructions: ${input.prompt}. Only output the redesigned image, do not output any[...]`},
         ],
         config: {
           responseModalities: ['IMAGE'],
         },
       });
 
-    if (!media.url) {
+    if (!result.media?.url) {
         throw new Error('Image generation failed. No media URL was returned.');
     }
 
-    return { imageDataUri: media.url };
+    return { imageDataUri: result.media.url };
   }
 );
